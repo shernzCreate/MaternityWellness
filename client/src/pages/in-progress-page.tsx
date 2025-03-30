@@ -617,11 +617,18 @@ export default function InProgressPage() {
               
               <TabsContent value="user-progress">
                 <Card>
-                  <CardHeader>
-                    <CardTitle>Your Assessment History</CardTitle>
-                    <CardDescription>
-                      Track your mental health journey with assessment scores and mood records
-                    </CardDescription>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center space-x-2">
+                      <div className="p-2 bg-blue-100 rounded-full">
+                        <ClipboardList className="h-5 w-5 text-blue-700" />
+                      </div>
+                      <div>
+                        <CardTitle>Your Assessment History</CardTitle>
+                        <CardDescription>
+                          Track your mental health journey with assessment scores and mood records
+                        </CardDescription>
+                      </div>
+                    </div>
                   </CardHeader>
                   <CardContent>
                     {/* Component content moved inline due to error */}
@@ -652,11 +659,18 @@ export default function InProgressPage() {
                 </Card>
                 
                 <Card className="mt-6">
-                  <CardHeader>
-                    <CardTitle>Mood Calendar</CardTitle>
-                    <CardDescription>
-                      View your daily mood entries on a calendar
-                    </CardDescription>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center space-x-2">
+                      <div className="p-2 bg-green-100 rounded-full">
+                        <CalendarDays className="h-5 w-5 text-green-700" />
+                      </div>
+                      <div>
+                        <CardTitle>Mood Calendar</CardTitle>
+                        <CardDescription>
+                          View your daily mood entries on a calendar
+                        </CardDescription>
+                      </div>
+                    </div>
                   </CardHeader>
                   <CardContent>
                     {/* Calendar component moved inline */}
