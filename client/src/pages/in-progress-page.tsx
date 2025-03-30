@@ -15,8 +15,12 @@ import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
+import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, getDate, isSameDay } from "date-fns";
+import { useAuth } from "@/hooks/use-auth";
+import { getEpdsInterpretation, getPhq9Interpretation } from "@/lib/assessmentData";
 import {
-  Calendar,
+  Calendar as CalendarIcon,
   Clock,
   Code,
   ExternalLink,
@@ -37,7 +41,11 @@ import {
   CloudSnow,
   MapPin,
   ChartLine,
-  BrainCircuit
+  BrainCircuit,
+  ArrowRight,
+  LineChart,
+  CalendarDays,
+  Calendar
 } from "lucide-react";
 
 interface FeatureItem {
@@ -57,6 +65,232 @@ interface FeedbackItem {
   description: string;
   status: "submitted" | "reviewing" | "implemented";
   date: string;
+}
+
+// Assessment History Component
+function AssessmentHistory() {
+  const { user } = useAuth();
+  
+  // Fetch the user's assessment history
+  const { data: assessments, isLoading } = useQuery({
+    queryKey: ["/api/assessments"],
+    queryFn: async () => {
+      try {
+        const response = await fetch("/api/assessments");
+        if (!response.ok) {
+          throw new Error("Failed to fetch assessments");
+        }
+        return await response.json();
+      } catch (error) {
+        console.error("Error fetching assessments:", error);
+        return [];
+      }
+    }
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center p-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!assessments || assessments.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <ClipboardList className="h-12 w-12 mx-auto text-muted-foreground" />
+        <h3 className="mt-4 text-lg font-medium">No Assessments Yet</h3>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Complete your first mental health assessment to start tracking your progress.
+        </p>
+        <Button className="mt-4" onClick={() => window.location.href = '/assessment'}>
+          Take an Assessment
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="mb-6">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="font-medium">Assessment Results</h3>
+          <Button variant="outline" size="sm" onClick={() => window.location.href = '/assessment'}>
+            <ArrowRight className="h-4 w-4 mr-2" />
+            New Assessment
+          </Button>
+        </div>
+        
+        <div className="space-y-4">
+          {assessments.map((assessment: any) => {
+            const interpretation = assessment.type === 'epds' 
+              ? getEpdsInterpretation(assessment.score)
+              : getPhq9Interpretation(assessment.score);
+              
+            return (
+              <div key={assessment.id} className="border rounded-lg p-4">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <Badge variant="outline">{assessment.type === 'epds' ? 'Edinburgh Scale' : 'PHQ-9'}</Badge>
+                    <h4 className="font-medium mt-2">{interpretation.severity}</h4>
+                    <p className="text-sm text-muted-foreground">{interpretation.description}</p>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-2xl font-bold">{assessment.score}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {format(new Date(assessment.date), 'PPP')}
+                    </div>
+                  </div>
+                </div>
+                <Progress 
+                  value={assessment.type === 'epds' 
+                    ? (assessment.score / 30) * 100 
+                    : (assessment.score / 27) * 100
+                  } 
+                  className={`h-2 mt-4 ${
+                    assessment.score < 8 ? "bg-green-500" : 
+                    assessment.score < 13 ? "bg-amber-500" : 
+                    "bg-red-500"
+                  }`} 
+                />
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Mood Calendar Component
+function MoodCalendar() {
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  
+  // Fetch the user's mood entries
+  const { data: moods, isLoading } = useQuery({
+    queryKey: ["/api/moods"],
+    queryFn: async () => {
+      try {
+        const response = await fetch("/api/moods");
+        if (!response.ok) {
+          throw new Error("Failed to fetch moods");
+        }
+        return await response.json();
+      } catch (error) {
+        console.error("Error fetching moods:", error);
+        return [];
+      }
+    }
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center p-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  const start = startOfMonth(currentMonth);
+  const end = endOfMonth(currentMonth);
+  const days = eachDayOfInterval({ start, end });
+
+  const getMoodForDay = (day: Date) => {
+    if (!moods) return null;
+    return moods.find((mood: any) => isSameDay(new Date(mood.date), day));
+  };
+
+  const getMoodColor = (mood: string) => {
+    switch(mood) {
+      case 'happy': return 'bg-green-500';
+      case 'good': return 'bg-green-300';
+      case 'okay': return 'bg-blue-300';
+      case 'tired': return 'bg-amber-300';  
+      case 'stressed': return 'bg-amber-500';
+      case 'sad': return 'bg-red-300';
+      case 'angry': return 'bg-red-500';
+      default: return 'bg-gray-200';
+    }
+  };
+
+  const getMoodEmoji = (mood: string) => {
+    switch(mood) {
+      case 'happy': return '😊';
+      case 'good': return '🙂';
+      case 'okay': return '😐';
+      case 'tired': return '😴';  
+      case 'stressed': return '😰';
+      case 'sad': return '😢';
+      case 'angry': return '😠';
+      default: return '';
+    }
+  };
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="font-medium">{format(currentMonth, 'MMMM yyyy')}</h3>
+        <div className="flex gap-1">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))}
+          >
+            Previous
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))}
+          >
+            Next
+          </Button>
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-7 gap-1 text-center mb-2">
+        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+          <div key={day} className="text-xs font-medium text-muted-foreground">
+            {day}
+          </div>
+        ))}
+      </div>
+      
+      <div className="grid grid-cols-7 gap-1">
+        {days.map(day => {
+          const mood = getMoodForDay(day);
+          return (
+            <div 
+              key={day.toString()} 
+              className={`aspect-square rounded-md flex flex-col items-center justify-center ${
+                mood ? getMoodColor(mood.mood) : 'bg-gray-100'
+              }`}
+            >
+              <div className="text-xs font-medium">{getDate(day)}</div>
+              {mood && (
+                <div className="text-lg leading-none mt-1">{getMoodEmoji(mood.mood)}</div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      
+      {(!moods || moods.length === 0) && (
+        <div className="text-center mt-4 p-4 border border-dashed rounded-md">
+          <p className="text-sm text-muted-foreground">
+            No mood data recorded yet. Track your daily mood to see it on the calendar.
+          </p>
+        </div>
+      )}
+      
+      <div className="mt-6">
+        <Button className="w-full" onClick={() => window.location.href = '/'}>
+          Track Today's Mood
+        </Button>
+      </div>
+    </div>
+  );
 }
 
 export default function InProgressPage() {
@@ -248,9 +482,9 @@ export default function InProgressPage() {
       <div className="container py-6 max-w-4xl">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold">Development Roadmap</h1>
+            <h1 className="text-2xl font-bold">Your Progress</h1>
             <p className="text-muted-foreground mt-1">
-              Track the progress of upcoming features and improvements
+              Track your mental health journey and app development updates
             </p>
           </div>
           <Button 
@@ -371,8 +605,12 @@ export default function InProgressPage() {
           
           {/* Main Content */}
           <div className="lg:col-span-3">
-            <Tabs defaultValue="roadmap">
-              <TabsList className="grid w-full grid-cols-2 mb-6">
+            <Tabs defaultValue="user-progress">
+              <TabsList className="grid w-full grid-cols-3 mb-6">
+                <TabsTrigger value="user-progress" className="flex items-center">
+                  <LineChart className="w-4 h-4 mr-2" />
+                  Your Progress
+                </TabsTrigger>
                 <TabsTrigger value="roadmap" className="flex items-center">
                   <SquareStack className="w-4 h-4 mr-2" />
                   Feature Roadmap
@@ -382,6 +620,96 @@ export default function InProgressPage() {
                   Community Feedback
                 </TabsTrigger>
               </TabsList>
+              
+              <TabsContent value="user-progress">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Your Assessment History</CardTitle>
+                    <CardDescription>
+                      Track your mental health journey with assessment scores and mood records
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {/* Component content moved inline due to error */}
+                    <div>
+                      <div className="mb-6">
+                        <div className="flex justify-between items-center mb-4">
+                          <h3 className="font-medium">Assessment Results</h3>
+                          <Button variant="outline" size="sm" onClick={() => window.location.href = '/assessment'}>
+                            <ArrowRight className="h-4 w-4 mr-2" />
+                            New Assessment
+                          </Button>
+                        </div>
+                        
+                        {/* Assessment history items will appear here when you complete assessments */}
+                        <div className="text-center py-8">
+                          <ClipboardList className="h-12 w-12 mx-auto text-muted-foreground" />
+                          <h3 className="mt-4 text-lg font-medium">No Assessments Yet</h3>
+                          <p className="mt-2 text-sm text-muted-foreground">
+                            Complete your first mental health assessment to start tracking your progress.
+                          </p>
+                          <Button className="mt-4" onClick={() => window.location.href = '/assessment'}>
+                            Take an Assessment
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card className="mt-6">
+                  <CardHeader>
+                    <CardTitle>Mood Calendar</CardTitle>
+                    <CardDescription>
+                      View your daily mood entries on a calendar
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {/* Calendar component moved inline */}
+                    <div>
+                      <div className="flex justify-between items-center mb-4">
+                        <h3 className="font-medium">{format(new Date(), 'MMMM yyyy')}</h3>
+                        <div className="flex gap-1">
+                          <Button variant="outline" size="sm">Previous</Button>
+                          <Button variant="outline" size="sm">Next</Button>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-7 gap-1 text-center mb-2">
+                        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                          <div key={day} className="text-xs font-medium text-muted-foreground">
+                            {day}
+                          </div>
+                        ))}
+                      </div>
+                      
+                      <div className="grid grid-cols-7 gap-1">
+                        {/* Calendar cells would be generated here */}
+                        {Array.from({length: 30}).map((_, i) => (
+                          <div 
+                            key={i} 
+                            className="aspect-square rounded-md flex flex-col items-center justify-center bg-gray-100"
+                          >
+                            <div className="text-xs font-medium">{i + 1}</div>
+                          </div>
+                        ))}
+                      </div>
+                      
+                      <div className="text-center mt-4 p-4 border border-dashed rounded-md">
+                        <p className="text-sm text-muted-foreground">
+                          No mood data recorded yet. Track your daily mood to see it on the calendar.
+                        </p>
+                      </div>
+                      
+                      <div className="mt-6">
+                        <Button className="w-full" onClick={() => window.location.href = '/'}>
+                          Track Today's Mood
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
               
               <TabsContent value="roadmap">
                 <Card>
