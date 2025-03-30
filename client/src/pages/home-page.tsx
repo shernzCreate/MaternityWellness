@@ -161,20 +161,6 @@ export default function HomePage() {
               <p className="text-xs text-muted-foreground">Account & preferences</p>
             </CardContent>
           </Card>
-          
-          {/* What's Coming */}
-          <Card 
-            className="cursor-pointer hover:shadow-md transition-shadow"
-            onClick={() => navigate('/in-progress')}
-          >
-            <CardContent className="p-4">
-              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mb-3">
-                <Sparkles className="text-blue-500 h-5 w-5" />
-              </div>
-              <h3 className="font-semibold text-base mb-1">Coming Soon</h3>
-              <p className="text-xs text-muted-foreground">New features in progress</p>
-            </CardContent>
-          </Card>
         </div>
         
         {/* Daily Tip */}
