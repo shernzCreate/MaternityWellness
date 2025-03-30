@@ -25,12 +25,13 @@ export default function CommunityPage() {
   
   // Check URL for tab parameter
   useEffect(() => {
-    const params = new URLSearchParams(location.split('?')[1]);
+    const searchParams = window.location.search;
+    const params = new URLSearchParams(searchParams);
     const tabParam = params.get('tab');
     if (tabParam === 'chat' || tabParam === 'forum') {
       setActiveTab(tabParam);
     }
-  }, [location]);
+  }, []);
   
   return (
     <AppLayout activeTab="community">
