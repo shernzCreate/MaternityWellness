@@ -7,7 +7,7 @@ import { MoodTracker } from "@/components/mood-tracker";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { HeartPulse, BookOpen, MessageSquareHeart, Users, AlertTriangle, Phone, Share2, Settings, User, Sparkles } from "lucide-react";
+import { HeartPulse, BookOpen, MessageSquareHeart, Users, AlertTriangle, Phone, Share2, Settings } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { isInNativeApp, isInIOSApp, shareContent, openAppSettings, showNativeNotification } from "@/lib/nativeBridge";
 
@@ -145,20 +145,6 @@ export default function HomePage() {
               </div>
               <h3 className="font-semibold text-base mb-1">Community</h3>
               <p className="text-xs text-muted-foreground">Connect with other mothers</p>
-            </CardContent>
-          </Card>
-          
-          {/* Profile */}
-          <Card 
-            className="cursor-pointer hover:shadow-md transition-shadow"
-            onClick={() => navigate('/profile')}
-          >
-            <CardContent className="p-4">
-              <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center mb-3">
-                <User className="text-orange-500 h-5 w-5" />
-              </div>
-              <h3 className="font-semibold text-base mb-1">Your Profile</h3>
-              <p className="text-xs text-muted-foreground">Account & preferences</p>
             </CardContent>
           </Card>
         </div>
