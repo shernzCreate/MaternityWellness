@@ -10,6 +10,7 @@ import ResourcesPage from "@/pages/resources-page";
 import CarePlanPage from "@/pages/care-plan-page";
 import CommunityPage from "@/pages/community-page";
 import ProfilePage from "@/pages/profile-page";
+import InProgressPage from "@/pages/in-progress-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "./hooks/use-auth";
 import { isInNativeApp, getPlatformName } from "./lib/nativeBridge";
@@ -47,6 +48,7 @@ function AppRoutes() {
       <ProtectedRoute path="/care-plan" component={CarePlanPage} />
       <ProtectedRoute path="/community" component={CommunityPage} />
       <ProtectedRoute path="/profile" component={ProfilePage} />
+      <ProtectedRoute path="/progress" component={InProgressPage} />
       <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />
     </Switch>

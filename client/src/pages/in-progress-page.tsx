@@ -244,7 +244,7 @@ export default function InProgressPage() {
   };
 
   return (
-    <AppLayout>
+    <AppLayout activeTab="progress">
       <div className="container py-6 max-w-4xl">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6">
           <div>
