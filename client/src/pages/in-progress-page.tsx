@@ -480,20 +480,11 @@ export default function InProgressPage() {
   return (
     <AppLayout activeTab="progress">
       <div className="container py-6 max-w-4xl">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold">Your Progress</h1>
-            <p className="text-muted-foreground mt-1">
-              Track your mental health journey and app development updates
-            </p>
-          </div>
-          <Button 
-            className="mt-4 md:mt-0"
-            onClick={() => setFeedbackFormOpen(true)}
-          >
-            <Lightbulb className="w-4 h-4 mr-2" />
-            Suggest a Feature
-          </Button>
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold">Your Progress</h1>
+          <p className="text-muted-foreground mt-1">
+            Track your mental health journey and app development updates
+          </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -846,58 +837,7 @@ export default function InProgressPage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    {feedbackFormOpen ? (
-                      <div className="bg-accent/10 border-accent p-4 rounded-lg mb-6">
-                        <h3 className="font-medium mb-3">Suggest a Feature</h3>
-                        <div className="space-y-4">
-                          <div>
-                            <label className="block text-sm font-medium mb-1">Feature Type</label>
-                            <select 
-                              className="w-full p-2 border rounded-md bg-background"
-                              value={selectedFeature}
-                              onChange={(e) => setSelectedFeature(e.target.value)}
-                            >
-                              <option value="">Select a feature type</option>
-                              <option value="Community Features">Community Features</option>
-                              <option value="Assessment Tools">Assessment Tools</option>
-                              <option value="Educational Resources">Educational Resources</option>
-                              <option value="Care Plan">Care Plan</option>
-                              <option value="User Interface">User Interface</option>
-                              <option value="Other">Other</option>
-                            </select>
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium mb-1">Your Suggestion</label>
-                            <textarea 
-                              className="w-full p-3 border rounded-md bg-background min-h-[100px]"
-                              placeholder="Describe the feature you'd like to see..."
-                              value={feedbackText}
-                              onChange={(e) => setFeedbackText(e.target.value)}
-                            ></textarea>
-                          </div>
-                          <div className="flex justify-end gap-2">
-                            <Button 
-                              variant="outline" 
-                              onClick={() => setFeedbackFormOpen(false)}
-                            >
-                              Cancel
-                            </Button>
-                            <Button onClick={submitFeedback}>
-                              Submit Feedback
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <Button 
-                        variant="outline" 
-                        className="w-full mb-6"
-                        onClick={() => setFeedbackFormOpen(true)}
-                      >
-                        <Lightbulb className="w-4 h-4 mr-2" />
-                        Suggest a New Feature
-                      </Button>
-                    )}
+                    {/* Feedback form removed as requested */}
                     
                     <div className="space-y-4">
                       {feedbackItems.map(item => (
