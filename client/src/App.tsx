@@ -10,8 +10,22 @@ import ResourcesPage from "@/pages/resources-page";
 import CarePlanPage from "@/pages/care-plan-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "./hooks/use-auth";
+import { isInNativeApp, getPlatformName } from "./lib/nativeBridge";
+import { useEffect } from "react";
 
 function App() {
+  useEffect(() => {
+    if (isInNativeApp()) {
+      console.log(`Running in ${getPlatformName()}`);
+      
+      // Apply native app specific styles or behaviors
+      document.documentElement.classList.add('native-app');
+      if (document.documentElement.classList.contains('ios-app')) {
+        document.documentElement.classList.add('ios-app');
+      }
+    }
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>

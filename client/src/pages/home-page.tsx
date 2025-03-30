@@ -7,8 +7,9 @@ import { MoodTracker } from "@/components/mood-tracker";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { HeartPulse, BookOpen, MessageSquareHeart, Users, AlertTriangle, Phone } from "lucide-react";
+import { HeartPulse, BookOpen, MessageSquareHeart, Users, AlertTriangle, Phone, Share2, Settings } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
+import { isInNativeApp, isInIOSApp, shareContent, openAppSettings, showNativeNotification } from "@/lib/nativeBridge";
 
 export default function HomePage() {
   const { user } = useAuth();
@@ -144,11 +145,63 @@ export default function HomePage() {
         
         {/* Daily Tip */}
         <Alert className="bg-accent bg-opacity-10 border-accent mb-6">
-          <CardTitle className="text-sm font-semibold text-accent-dark mb-2">Daily Wellness Tip</CardTitle>
-          <AlertDescription className="text-sm text-neutral-700">
-            {dailyTip.content}
-          </AlertDescription>
+          <div className="flex justify-between items-start">
+            <div>
+              <CardTitle className="text-sm font-semibold text-accent-dark mb-2">Daily Wellness Tip</CardTitle>
+              <AlertDescription className="text-sm text-neutral-700">
+                {dailyTip.content}
+              </AlertDescription>
+            </div>
+            {isInNativeApp() && (
+              <Button 
+                size="sm" 
+                variant="ghost" 
+                className="p-1.5" 
+                onClick={() => shareContent(dailyTip.content)}
+              >
+                <Share2 className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
         </Alert>
+        
+        {/* Native App Features */}
+        {isInNativeApp() && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="text-sm">Native App Features</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-2">
+              <div className="flex flex-wrap gap-2">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={() => showNativeNotification('Maternal Wellness', 'Thanks for using our app! Remember to take a moment for self-care today.')}
+                >
+                  Show Notification
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={() => shareContent('Check out the Maternal Wellness app! It\'s helping me track and manage my postpartum wellbeing.')}
+                >
+                  Share App
+                </Button>
+                {isInIOSApp() && (
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    onClick={openAppSettings}
+                    className="flex items-center gap-1"
+                  >
+                    <Settings className="h-3.5 w-3.5" />
+                    App Settings
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
         
         {/* Emergency Support */}
         <Alert className="bg-destructive bg-opacity-10 border-destructive border">
