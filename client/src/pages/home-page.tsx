@@ -7,7 +7,7 @@ import { MoodTracker } from "@/components/mood-tracker";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { HeartPulse, BookOpen, MessageSquareHeart, Users, AlertTriangle, Phone, Share2, Settings } from "lucide-react";
+import { HeartPulse, BookOpen, MessageSquareHeart, Users, AlertTriangle, Phone, Share2, Settings, ClipboardList, Sparkles } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { isInNativeApp, isInIOSApp, shareContent, openAppSettings, showNativeNotification } from "@/lib/nativeBridge";
 
@@ -65,13 +65,20 @@ export default function HomePage() {
         {/* Assessment Card */}
         <Card className="mb-6">
           <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle>Wellness Check-In</CardTitle>
-              <span className="text-xs text-muted-foreground">5 min</span>
+            <div className="flex items-start space-x-3">
+              <div className="p-2 bg-blue-100 rounded-full">
+                <ClipboardList className="h-5 w-5 text-blue-700" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center justify-between">
+                  <CardTitle>Wellness Check-In</CardTitle>
+                  <span className="text-xs text-muted-foreground">5 min</span>
+                </div>
+                <CardDescription>
+                  Regular check-ins help track your mood patterns and provide personalized support.
+                </CardDescription>
+              </div>
             </div>
-            <CardDescription>
-              Regular check-ins help track your mood patterns and provide personalized support.
-            </CardDescription>
           </CardHeader>
           <CardContent>
             <Progress 
@@ -152,11 +159,16 @@ export default function HomePage() {
         {/* Daily Tip */}
         <Alert className="bg-accent bg-opacity-10 border-accent mb-6">
           <div className="flex justify-between items-start">
-            <div>
-              <CardTitle className="text-sm font-semibold text-accent-dark mb-2">Daily Wellness Tip</CardTitle>
-              <AlertDescription className="text-sm text-neutral-700">
-                {dailyTip.content}
-              </AlertDescription>
+            <div className="flex space-x-3">
+              <div className="mt-0.5">
+                <Sparkles className="h-5 w-5 text-accent" />
+              </div>
+              <div>
+                <CardTitle className="text-sm font-semibold text-accent-dark mb-2">Daily Wellness Tip</CardTitle>
+                <AlertDescription className="text-sm text-neutral-700">
+                  {dailyTip.content}
+                </AlertDescription>
+              </div>
             </div>
             {isInNativeApp() && (
               <Button 
