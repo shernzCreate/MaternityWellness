@@ -36,8 +36,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Generate a care plan if one doesn't exist
       const existingPlan = await storage.getLatestCarePlanByUserId(userId);
       if (!existingPlan) {
-        // Create default care plan based on assessment score
-        const defaultPlan = generateDefaultCarePlan(validatedData.score);
+        // Create default care plan based on assessment score and type
+        const defaultPlan = generateDefaultCarePlan(validatedData.score, validatedData.type);
         await storage.createCarePlan({
           userId,
           plan: defaultPlan
@@ -54,6 +54,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const userId = req.user?.id;
     const assessments = await storage.getAssessmentsByUserId(userId);
     res.json(assessments);
+  });
+
+  app.get("/api/assessments/history", requireAuth, async (req, res) => {
+    const userId = req.user?.id;
+    const assessments = await storage.getAssessmentsByUserId(userId);
+    
+    // Sort assessments by date (newest first)
+    const sortedAssessments = assessments.sort((a, b) => {
+      return new Date(b.date).getTime() - new Date(a.date).getTime();
+    });
+    
+    res.json(sortedAssessments);
   });
 
   app.get("/api/assessments/latest", requireAuth, async (req, res) => {
@@ -173,8 +185,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   return httpServer;
 }
 
-// Default care plan generator based on assessment score
-function generateDefaultCarePlan(score: number) {
+// Default care plan generator based on assessment score and type
+function generateDefaultCarePlan(score: number, type: string = 'epds') {
   const defaultPlan = {
     mindAndEmotions: [
       {
@@ -228,14 +240,66 @@ function generateDefaultCarePlan(score: number) {
     ]
   };
 
-  // Adjust plan based on severity (score)
-  if (score > 15) {
-    // More severe - add professional recommendations
-    defaultPlan.supportAndConnection.push({
-      title: "Professional therapy",
-      description: "Weekly sessions with a mental health professional",
-      type: "support",
-    });
+  // Adjust plan based on assessment type and severity
+  if (type === 'epds') {
+    // EPDS scoring thresholds
+    if (score > 13) {
+      // Probable depression - add professional recommendations
+      defaultPlan.supportAndConnection.push({
+        title: "Professional therapy",
+        description: "Weekly sessions with a maternal mental health specialist",
+        type: "support",
+      });
+      
+      defaultPlan.mindAndEmotions.push({
+        title: "Structured self-care plan",
+        description: "Daily scheduled activities to boost maternal wellbeing",
+        type: "mind",
+      });
+    } else if (score > 9) {
+      // Possible depression - add self-monitoring
+      defaultPlan.mindAndEmotions.push({
+        title: "Mood monitoring",
+        description: "Track daily emotions to identify patterns and triggers",
+        type: "mind",
+      });
+    }
+  } else if (type === 'phq9') {
+    // PHQ-9 scoring thresholds
+    if (score >= 20) {
+      // Severe depression
+      defaultPlan.supportAndConnection.push({
+        title: "Urgent mental health support",
+        description: "Connect with a mental health professional as soon as possible",
+        type: "support",
+      });
+      
+      defaultPlan.mindAndEmotions.push({
+        title: "Crisis response plan",
+        description: "Steps to follow when feeling overwhelmed or in crisis",
+        type: "mind",
+      });
+    } else if (score >= 15) {
+      // Moderately severe depression
+      defaultPlan.supportAndConnection.push({
+        title: "Professional therapy",
+        description: "Regular sessions with a mental health professional",
+        type: "support",
+      });
+      
+      defaultPlan.bodyAndRest.push({
+        title: "Regular physical activity",
+        description: "30 minutes of moderate exercise most days of the week",
+        type: "body",
+      });
+    } else if (score >= 10) {
+      // Moderate depression
+      defaultPlan.mindAndEmotions.push({
+        title: "Structured daily routine",
+        description: "Planning daily activities to maintain regular schedule",
+        type: "mind",
+      });
+    }
   }
 
   return defaultPlan;

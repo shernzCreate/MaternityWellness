@@ -16,7 +16,9 @@ export const assessments = pgTable("assessments", {
   userId: integer("user_id").notNull(),
   date: timestamp("date").defaultNow(),
   score: integer("score").notNull(),
+  type: text("type").notNull(), // "epds" or "phq9"
   answers: json("answers").notNull(),
+  completed: boolean("completed").default(true).notNull(),
 });
 
 export const moods = pgTable("moods", {
@@ -55,7 +57,9 @@ export const insertUserSchema = createInsertSchema(users).pick({
 export const insertAssessmentSchema = createInsertSchema(assessments).pick({
   userId: true,
   score: true,
+  type: true,
   answers: true,
+  completed: true,
 });
 
 export const insertMoodSchema = createInsertSchema(moods).pick({

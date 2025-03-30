@@ -135,4 +135,16 @@ class ViewController: UIViewController, WKNavigationDelegate, WKUIDelegate, WKSc
     deinit {
         NotificationCenter.default.removeObserver(self)
     }
+    
+    // MARK: - Deep Linking Navigation
+    
+    func navigateToPath(_ path: String) {
+        // Navigate to specific path in the web app
+        let script = """
+        if (window.location.pathname !== '\(path)') {
+            window.location.pathname = '\(path)';
+        }
+        """
+        webView.evaluateJavaScript(script, completionHandler: nil)
+    }
 }

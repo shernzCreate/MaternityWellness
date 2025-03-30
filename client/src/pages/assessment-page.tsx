@@ -1,183 +1,56 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, Check } from "lucide-react";
-import { AssessmentForm } from "@/components/assessment-form";
+import { ArrowLeft, CheckCircle, ArrowRightCircle, ClipboardCheck, Brain, Check } from "lucide-react";
+import { QuestionnaireForm } from "@/components/questionnaire-form";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
+import { epdsQuestions, phq9Questions, getEpdsInterpretation, getPhq9Interpretation } from "@/lib/assessmentData";
 
-// Assessment questions based on Edinburgh Postnatal Depression Scale (EPDS)
-const assessmentQuestions = [
-  {
-    id: 1,
-    question: "I have been able to laugh and see the funny side of things",
-    options: [
-      { value: 0, label: "As much as I always could" },
-      { value: 1, label: "Not quite so much now" },
-      { value: 2, label: "Definitely not so much now" },
-      { value: 3, label: "Not at all" }
-    ]
-  },
-  {
-    id: 2,
-    question: "I have looked forward with enjoyment to things",
-    options: [
-      { value: 0, label: "As much as I ever did" },
-      { value: 1, label: "Rather less than I used to" },
-      { value: 2, label: "Definitely less than I used to" },
-      { value: 3, label: "Hardly at all" }
-    ]
-  },
-  {
-    id: 3,
-    question: "I have blamed myself unnecessarily when things went wrong",
-    options: [
-      { value: 0, label: "No, never" },
-      { value: 1, label: "Not very often" },
-      { value: 2, label: "Yes, some of the time" },
-      { value: 3, label: "Yes, most of the time" }
-    ]
-  },
-  {
-    id: 4,
-    question: "I have been anxious or worried for no good reason",
-    options: [
-      { value: 0, label: "No, not at all" },
-      { value: 1, label: "Hardly ever" },
-      { value: 2, label: "Yes, sometimes" },
-      { value: 3, label: "Yes, very often" }
-    ]
-  },
-  {
-    id: 5,
-    question: "I have felt scared or panicky for no very good reason",
-    options: [
-      { value: 0, label: "No, not at all" },
-      { value: 1, label: "No, not much" },
-      { value: 2, label: "Yes, sometimes" },
-      { value: 3, label: "Yes, quite a lot" }
-    ]
-  },
-  {
-    id: 6,
-    question: "Things have been getting on top of me",
-    options: [
-      { value: 0, label: "No, I have been coping as well as ever" },
-      { value: 1, label: "No, most of the time I have coped quite well" },
-      { value: 2, label: "Yes, sometimes I haven't been coping as well as usual" },
-      { value: 3, label: "Yes, most of the time I haven't been able to cope at all" }
-    ]
-  },
-  {
-    id: 7,
-    question: "I have been so unhappy that I have had difficulty sleeping",
-    options: [
-      { value: 0, label: "No, not at all" },
-      { value: 1, label: "Not very often" },
-      { value: 2, label: "Yes, sometimes" },
-      { value: 3, label: "Yes, most of the time" }
-    ]
-  },
-  {
-    id: 8,
-    question: "I have felt sad or miserable",
-    options: [
-      { value: 0, label: "No, not at all" },
-      { value: 1, label: "Not very often" },
-      { value: 2, label: "Yes, quite often" },
-      { value: 3, label: "Yes, most of the time" }
-    ]
-  },
-  {
-    id: 9,
-    question: "I have been so unhappy that I have been crying",
-    options: [
-      { value: 0, label: "No, never" },
-      { value: 1, label: "Only occasionally" },
-      { value: 2, label: "Yes, quite often" },
-      { value: 3, label: "Yes, most of the time" }
-    ]
-  },
-  {
-    id: 10,
-    question: "The thought of harming myself has occurred to me",
-    options: [
-      { value: 0, label: "Never" },
-      { value: 1, label: "Hardly ever" },
-      { value: 2, label: "Sometimes" },
-      { value: 3, label: "Yes, quite often" }
-    ]
-  }
-];
+interface AssessmentResult {
+  id: number;
+  score: number;
+  type: string;
+  date: string;
+}
 
 export default function AssessmentPage() {
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<number, number>>({});
-  const [isComplete, setIsComplete] = useState(false);
   const [, navigate] = useLocation();
   const { user } = useAuth();
+  const [activeQuestionnaireType, setActiveQuestionnaireType] = useState<"epds" | "phq9">("epds");
+  const [showHistory, setShowHistory] = useState(false);
 
-  const totalQuestions = assessmentQuestions.length;
-  const currentProgress = (currentQuestionIndex / totalQuestions) * 100;
-  const currentQuestion = assessmentQuestions[currentQuestionIndex];
-
-  const assessmentMutation = useMutation({
-    mutationFn: async (data: { score: number, answers: Record<number, number> }) => {
-      const res = await apiRequest("POST", "/api/assessments", data);
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/assessments/latest"] });
+  // Fetch assessment history
+  const { data: assessmentHistory, isLoading: isHistoryLoading } = useQuery({
+    queryKey: ['/api/assessments/history'],
+    queryFn: async () => {
+      try {
+        const response = await fetch('/api/assessments/history');
+        if (!response.ok) {
+          return [];
+        }
+        return await response.json();
+      } catch (error) {
+        console.error('Error fetching assessment history:', error);
+        return [];
+      }
     }
   });
 
-  const handleAnswer = (value: number) => {
-    // Save the answer
-    const newAnswers = { ...answers, [currentQuestion.id]: value };
-    setAnswers(newAnswers);
-    
-    // Move to next question or complete
-    if (currentQuestionIndex < totalQuestions - 1) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
-    } else {
-      completeAssessment(newAnswers);
-    }
-  };
-
-  const handlePrevious = () => {
-    if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(currentQuestionIndex - 1);
-    }
-  };
-
-  const completeAssessment = (finalAnswers: Record<number, number>) => {
-    // Calculate total score
-    const totalScore = Object.values(finalAnswers).reduce((sum, value) => sum + value, 0);
-    
-    // Submit assessment
-    assessmentMutation.mutateAsync({
-      score: totalScore,
-      answers: finalAnswers
-    });
-    
-    setIsComplete(true);
-  };
-
-  const interpretScore = (score: number) => {
-    if (score <= 8) return { level: "Low risk", color: "bg-success" };
-    if (score <= 12) return { level: "Moderate concern", color: "bg-warning" };
-    return { level: "High concern", color: "bg-destructive" };
-  };
-
-  const calculateTotalScore = () => {
-    return Object.values(answers).reduce((sum, value) => sum + value, 0);
+  // Handler for assessment completion
+  const handleAssessmentComplete = (score: number, answers: Record<number, number>) => {
+    // Navigate to care plan page after assessment is complete
+    setTimeout(() => {
+      navigate('/care-plan');
+    }, 5000);
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-background">
       <div className="bg-primary text-white px-4 py-6">
         <div className="flex items-center">
           <Button 
@@ -188,130 +61,149 @@ export default function AssessmentPage() {
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="font-bold text-xl">Wellness Check-In</h1>
-        </div>
-        
-        <div className="mt-4 bg-white bg-opacity-10 rounded-xl p-3">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm">Progress</span>
-            <span className="text-sm font-medium">
-              Question {currentQuestionIndex + 1} of {totalQuestions}
-            </span>
-          </div>
-          <Progress 
-            value={currentProgress} 
-            className="bg-white bg-opacity-20 h-2" 
-            indicatorClassName="bg-white" 
-          />
+          <h1 className="font-bold text-xl">Mental Health Assessment</h1>
         </div>
       </div>
       
-      {/* Question or Completion Screen */}
       <div className="px-4 py-6">
-        {!isComplete ? (
-          <div className="question">
-            <h2 className="font-semibold text-lg mb-4">{currentQuestion.question}</h2>
-            
-            <div className="space-y-3 mb-8">
-              {currentQuestion.options.map((option) => (
-                <Button
-                  key={option.value}
-                  variant="outline"
-                  className="w-full justify-start p-4 h-auto text-left font-normal"
-                  onClick={() => handleAnswer(option.value)}
-                >
-                  <div className="flex items-center">
-                    <span>{option.label}</span>
-                  </div>
-                </Button>
-              ))}
-            </div>
-            
-            <div className="flex justify-between">
-              <Button 
-                variant="outline" 
-                onClick={handlePrevious}
-                disabled={currentQuestionIndex === 0}
-              >
-                Previous
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <div className="completion-screen">
-            <div className="text-center mb-8">
-              <div className="w-20 h-20 bg-success bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Check className="h-8 w-8 text-success" />
-              </div>
-              <h2 className="font-bold text-xl mb-2">Assessment Complete</h2>
-              <p className="text-muted-foreground">Thank you for completing today's wellness check-in.</p>
-            </div>
-            
-            <Card className="mb-8">
-              <CardContent className="pt-6">
-                <h3 className="font-semibold text-lg mb-3">Your Insights</h3>
-                
-                {/* Score interpretation */}
-                <div className="mb-4">
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="text-sm font-medium">Overall Wellbeing</span>
-                    <span className="text-xs text-muted-foreground">
-                      {interpretScore(calculateTotalScore()).level}
-                    </span>
-                  </div>
-                  <Progress 
-                    value={100 - (calculateTotalScore() / 30) * 100} 
-                    className="h-2"
-                    indicatorClassName={interpretScore(calculateTotalScore()).color}
-                  />
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Choose Your Assessment</CardTitle>
+            <CardDescription>
+              Complete one of these validated questionnaires to assess your mental health.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Tabs defaultValue="assessments" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-4">
+                <TabsTrigger value="assessments">Assessments</TabsTrigger>
+                <TabsTrigger value="history">History</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="assessments">
+                <Tabs defaultValue={activeQuestionnaireType} onValueChange={(value) => setActiveQuestionnaireType(value as "epds" | "phq9")}>
+                  <TabsList className="grid w-full grid-cols-2 mb-6">
+                    <TabsTrigger value="epds" className="flex items-center gap-2">
+                      <ClipboardCheck className="h-4 w-4" />
+                      <span>EPDS</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="phq9" className="flex items-center gap-2">
+                      <Brain className="h-4 w-4" />
+                      <span>PHQ-9</span>
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="epds">
+                    <div className="mb-6">
+                      <h3 className="text-lg font-semibold mb-2">Edinburgh Postnatal Depression Scale</h3>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        This 10-question self-assessment tool helps identify symptoms of depression during pregnancy and after childbirth.
+                      </p>
+                      
+                      <div className="grid grid-cols-2 gap-4 mb-6">
+                        <div className="bg-muted p-3 rounded-lg">
+                          <p className="text-sm font-medium">Time to complete</p>
+                          <p className="text-sm text-muted-foreground">5 minutes</p>
+                        </div>
+                        <div className="bg-muted p-3 rounded-lg">
+                          <p className="text-sm font-medium">Recommended</p>
+                          <p className="text-sm text-muted-foreground">Every 2-4 weeks</p>
+                        </div>
+                      </div>
+
+                      <QuestionnaireForm
+                        title="Edinburgh Postnatal Depression Scale (EPDS)"
+                        description="Please select the answer that comes closest to how you have felt in the past 7 days, not just how you feel today."
+                        questionnaire="epds"
+                        questions={epdsQuestions}
+                        onComplete={handleAssessmentComplete}
+                      />
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="phq9">
+                    <div className="mb-6">
+                      <h3 className="text-lg font-semibold mb-2">Patient Health Questionnaire (PHQ-9)</h3>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        This 9-question tool is used to assess the severity of depression symptoms over the last two weeks.
+                      </p>
+                      
+                      <div className="grid grid-cols-2 gap-4 mb-6">
+                        <div className="bg-muted p-3 rounded-lg">
+                          <p className="text-sm font-medium">Time to complete</p>
+                          <p className="text-sm text-muted-foreground">3-5 minutes</p>
+                        </div>
+                        <div className="bg-muted p-3 rounded-lg">
+                          <p className="text-sm font-medium">Recommended</p>
+                          <p className="text-sm text-muted-foreground">Monthly</p>
+                        </div>
+                      </div>
+
+                      <QuestionnaireForm
+                        title="Patient Health Questionnaire (PHQ-9)"
+                        description="Over the last 2 weeks, how often have you been bothered by any of the following problems?"
+                        questionnaire="phq9"
+                        questions={phq9Questions}
+                        onComplete={handleAssessmentComplete}
+                      />
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </TabsContent>
+
+              <TabsContent value="history">
+                <div>
+                  <h3 className="font-semibold text-lg mb-4">Your Assessment History</h3>
+                  
+                  {isHistoryLoading ? (
+                    <div className="flex justify-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+                    </div>
+                  ) : assessmentHistory && assessmentHistory.length > 0 ? (
+                    <div className="space-y-4">
+                      {assessmentHistory.map((assessment: AssessmentResult) => {
+                        const date = new Date(assessment.date);
+                        const formattedDate = date.toLocaleDateString('en-US', { 
+                          year: 'numeric', 
+                          month: 'short', 
+                          day: 'numeric' 
+                        });
+                        
+                        const interpretation = assessment.type === 'epds' 
+                          ? getEpdsInterpretation(assessment.score)
+                          : getPhq9Interpretation(assessment.score);
+                          
+                        return (
+                          <div key={assessment.id} className="border rounded-lg p-4">
+                            <div className="flex justify-between items-start mb-3">
+                              <div>
+                                <h4 className="font-medium">{assessment.type === 'epds' ? 'EPDS' : 'PHQ-9'} Assessment</h4>
+                                <p className="text-sm text-muted-foreground">{formattedDate}</p>
+                              </div>
+                              <div className="flex items-center">
+                                <div className={`w-3 h-3 rounded-full ${interpretation.color} mr-2`}></div>
+                                <span className="text-sm font-medium">{assessment.score}</span>
+                              </div>
+                            </div>
+                            <div className="bg-muted p-3 rounded-lg text-sm">
+                              <p className="font-medium">{interpretation.severity}</p>
+                              <p className="text-muted-foreground">{interpretation.description}</p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-muted-foreground mb-4">You haven't completed any assessments yet.</p>
+                      <Button onClick={() => setShowHistory(false)}>Take Your First Assessment</Button>
+                    </div>
+                  )}
                 </div>
-                
-                <div className="mb-4">
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="text-sm font-medium">Energy</span>
-                    <span className="text-xs text-muted-foreground">
-                      {calculateTotalScore() > 15 ? "Low" : "Moderate"}
-                    </span>
-                  </div>
-                  <Progress 
-                    value={100 - (calculateTotalScore() / 30) * 100 - 10} 
-                    className="h-2"
-                    indicatorClassName={calculateTotalScore() > 15 ? "bg-warning" : "bg-success"}
-                  />
-                </div>
-                
-                <div className="mb-4">
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="text-sm font-medium">Self-care</span>
-                    <span className="text-xs text-muted-foreground">
-                      Needs attention
-                    </span>
-                  </div>
-                  <Progress 
-                    value={60} 
-                    className="h-2"
-                    indicatorClassName="bg-success"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-            
-            <div className="flex flex-col space-y-3">
-              <Button 
-                onClick={() => navigate('/care-plan')}
-                className="bg-primary hover:bg-primary-dark"
-              >
-                View Your Care Plan
-              </Button>
-              <Button 
-                variant="outline"
-                onClick={() => navigate('/')}
-              >
-                Return to Dashboard
-              </Button>
-            </div>
-          </div>
-        )}
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
