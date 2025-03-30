@@ -321,6 +321,366 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // For now, just return success
     res.json({ success: true });
   });
+  
+  // Community and chat endpoints
+  
+  // Get support agents
+  app.get("/api/support/agents", requireAuth, async (req, res) => {
+    // Mock data for support agents
+    const agents = [
+      {
+        id: 1,
+        name: "Dr. Sarah Tan",
+        role: "Clinical Psychologist",
+        status: "online",
+        specialization: "Postpartum Depression & Anxiety",
+      },
+      {
+        id: 2,
+        name: "Mei Lin Wong",
+        role: "Counselor",
+        status: "online",
+        specialization: "Family Therapy & Relationship Issues",
+      },
+      {
+        id: 3,
+        name: "Dr. Ahmad Khan",
+        role: "Psychiatrist",
+        status: "offline",
+        specialization: "Mood Disorders & Medication Management",
+      },
+      {
+        id: 4,
+        name: "Priya Sharma",
+        role: "Social Worker",
+        status: "online",
+        specialization: "Support Resources & Community Services",
+      },
+    ];
+    
+    res.json(agents);
+  });
+  
+  // Get support messages
+  app.get("/api/support/messages", requireAuth, async (req, res) => {
+    const userId = req.user?.id;
+    if (userId === undefined) {
+      return res.status(401).json({ message: "User ID not found" });
+    }
+    
+    const agentId = parseInt(req.query.agentId as string);
+    if (isNaN(agentId)) {
+      return res.status(400).json({ message: "Agent ID is required" });
+    }
+    
+    // Mock empty messages array for new conversations
+    res.json([]);
+  });
+  
+  // Send support message
+  app.post("/api/support/messages", requireAuth, async (req, res) => {
+    const userId = req.user?.id;
+    if (userId === undefined) {
+      return res.status(401).json({ message: "User ID not found" });
+    }
+    
+    const { agentId, content } = req.body;
+    if (agentId === undefined) {
+      return res.status(400).json({ message: "Agent ID is required" });
+    }
+    if (!content || typeof content !== 'string') {
+      return res.status(400).json({ message: "Message content is required" });
+    }
+    
+    // Create a mock message response
+    const message = {
+      id: Date.now(),
+      userId,
+      userName: req.user?.fullName || "You",
+      isSupport: false,
+      content,
+      timestamp: new Date().toISOString(),
+      read: true,
+    };
+    
+    res.json(message);
+  });
+  
+  // Get community posts
+  app.get("/api/community/posts", requireAuth, async (req, res) => {
+    const userId = req.user?.id;
+    if (userId === undefined) {
+      return res.status(401).json({ message: "User ID not found" });
+    }
+    
+    const category = req.query.category as string;
+    const search = req.query.search as string;
+    
+    // Mock data for community posts
+    const posts = [
+      {
+        id: 1,
+        userId: 2,
+        userName: "Jasmine Tan",
+        title: "Feeling overwhelmed with a newborn and a toddler",
+        content: "I have a 3-week-old baby and a 2-year-old toddler. My husband works long hours, and I'm finding it impossible to manage both kids. My toddler is acting out due to jealousy, and I'm exhausted from lack of sleep. Some days I just break down crying. Has anyone been through this? Any advice would be greatly appreciated.",
+        category: "support",
+        timestamp: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(), // 3 hours ago
+        likes: 8,
+        comments: 5,
+        userLiked: false,
+        userBookmarked: false,
+        tags: ["newborn", "toddler", "exhaustion"]
+      },
+      {
+        id: 2,
+        userId: 3,
+        userName: "Dr. Mei Ling",
+        title: "Understanding Baby Blues vs Postpartum Depression",
+        content: "As a maternal mental health specialist, I often see confusion between 'baby blues' and postpartum depression. Baby blues typically last only 2 weeks postpartum and include mood swings and mild sadness. Postpartum depression is more severe, lasting longer and affecting daily functioning. If your symptoms persist beyond two weeks or feel overwhelming, please seek professional help. What questions do you have about the difference?",
+        category: "advice",
+        timestamp: new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString(), // 25 hours ago
+        likes: 42,
+        comments: 15,
+        userLiked: true,
+        userBookmarked: true,
+        tags: ["professional", "education", "mental health"]
+      },
+      {
+        id: 3,
+        userId: 4,
+        userName: "Sarah Wong",
+        title: "Successfully weaned off antidepressants - my journey",
+        content: "After suffering from PPD for 8 months, I started medication and therapy. The medication helped me stabilize, and the therapy gave me tools to cope. After a year, working closely with my doctor, I successfully weaned off the medication. I wanted to share this to give hope to those who worry they'll be on medication forever. Recovery is possible, though it looks different for everyone. Happy to answer questions about my experience.",
+        category: "experiences",
+        timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days ago
+        likes: 27,
+        comments: 8,
+        userLiked: false,
+        userBookmarked: false,
+        tags: ["recovery", "medication", "hope"]
+      },
+      {
+        id: 4,
+        userId: 5,
+        userName: "Aisha Binte Mohamed",
+        title: "Resources for postnatal depression in Singapore",
+        content: "I'm looking for resources for postnatal depression here in Singapore. My sister just had a baby and I'm concerned about her. She's showing signs of depression but is reluctant to seek help. Can anyone recommend culturally sensitive resources or support groups, particularly those that understand our Asian context? Any hotlines or counseling services that have helped you would be appreciated.",
+        category: "questions",
+        timestamp: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(), // 8 days ago
+        likes: 15,
+        comments: 12,
+        userLiked: false,
+        userBookmarked: false,
+        tags: ["singapore", "resources", "cultural sensitivity"]
+      },
+      {
+        id: 5,
+        userId: 6,
+        userName: "Michael Lim",
+        title: "Fathers and PPD - supporting your partner while struggling yourself",
+        content: "My wife was diagnosed with severe PPD 3 months after our daughter was born. While trying to support her, I realized I was also struggling with depression. It's not often talked about, but fathers can experience postpartum depression too. I found that I needed to take care of my own mental health in order to be there for my wife and baby. Any other dads going through this? What has helped you?",
+        category: "experiences",
+        timestamp: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(), // 15 days ago
+        likes: 34,
+        comments: 21,
+        userLiked: true,
+        userBookmarked: false,
+        tags: ["fathers", "partners", "men's mental health"]
+      }
+    ];
+    
+    // Filter posts by category if specified
+    let filteredPosts = category && category !== "all"
+      ? posts.filter(post => post.category === category)
+      : posts;
+    
+    // Filter posts by search query if specified
+    if (search) {
+      const searchLower = search.toLowerCase();
+      filteredPosts = filteredPosts.filter(post => 
+        post.title.toLowerCase().includes(searchLower) ||
+        post.content.toLowerCase().includes(searchLower) ||
+        post.tags.some(tag => tag.toLowerCase().includes(searchLower))
+      );
+    }
+    
+    res.json(filteredPosts);
+  });
+  
+  // Get post comments
+  app.get("/api/community/comments", requireAuth, async (req, res) => {
+    const userId = req.user?.id;
+    if (userId === undefined) {
+      return res.status(401).json({ message: "User ID not found" });
+    }
+    
+    const postId = parseInt(req.query.postId as string);
+    if (isNaN(postId)) {
+      return res.status(400).json({ message: "Post ID is required" });
+    }
+    
+    // Mock comments for post #1
+    if (postId === 1) {
+      const comments = [
+        {
+          id: 1,
+          postId: 1,
+          userId: 3,
+          userName: "Dr. Mei Ling",
+          content: "What you're experiencing is very common. The transition from one to two children is often more challenging than the first baby. Two specific suggestions: 1) Find small ways for your toddler to 'help' with the baby to address jealousy 2) Consider hiring even occasional help if possible, just to give you a break.",
+          timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
+          likes: 5,
+          userLiked: true
+        },
+        {
+          id: 2,
+          postId: 1,
+          userId: 7,
+          userName: "Priya Singh",
+          content: "I went through this exact situation last year. It DOES get better, I promise. One thing that helped was creating special 'mommy and toddler' time during baby's naps. Even 15 minutes of undivided attention made a difference for my toddler's behavior.",
+          timestamp: new Date(Date.now() - 2.5 * 60 * 60 * 1000).toISOString(), // 2.5 hours ago
+          likes: 3,
+          userLiked: false
+        },
+        {
+          id: 3,
+          postId: 1,
+          userId: 8,
+          userName: "Lisa Chen",
+          content: "The first few months with two under two was the hardest time of my life. Be gentle with yourself. Lowering standards helped me - paper plates, easy meals, letting the toddler have more screen time than I'd normally allow. Survival mode is ok until things settle.",
+          timestamp: new Date(Date.now() - 2.8 * 60 * 60 * 1000).toISOString(), // 2.8 hours ago
+          likes: 4,
+          userLiked: false
+        }
+      ];
+      
+      return res.json(comments);
+    }
+    
+    // Empty comments for other posts
+    res.json([]);
+  });
+  
+  // Add comment to post
+  app.post("/api/community/comments", requireAuth, async (req, res) => {
+    const userId = req.user?.id;
+    if (userId === undefined) {
+      return res.status(401).json({ message: "User ID not found" });
+    }
+    
+    const { postId, content } = req.body;
+    if (postId === undefined) {
+      return res.status(400).json({ message: "Post ID is required" });
+    }
+    if (!content || typeof content !== 'string') {
+      return res.status(400).json({ message: "Comment content is required" });
+    }
+    
+    // Create a mock comment response
+    const comment = {
+      id: Date.now(),
+      postId,
+      userId,
+      userName: req.user?.fullName || "You",
+      content,
+      timestamp: new Date().toISOString(),
+      likes: 0,
+      userLiked: false
+    };
+    
+    res.json(comment);
+  });
+  
+  // Create new post
+  app.post("/api/community/posts", requireAuth, async (req, res) => {
+    const userId = req.user?.id;
+    if (userId === undefined) {
+      return res.status(401).json({ message: "User ID not found" });
+    }
+    
+    const { title, content, category } = req.body;
+    if (!title || typeof title !== 'string') {
+      return res.status(400).json({ message: "Post title is required" });
+    }
+    if (!content || typeof content !== 'string') {
+      return res.status(400).json({ message: "Post content is required" });
+    }
+    if (!category || typeof category !== 'string') {
+      return res.status(400).json({ message: "Post category is required" });
+    }
+    
+    // Create a mock post response
+    const post = {
+      id: Date.now(),
+      userId,
+      userName: req.user?.fullName || "You",
+      title,
+      content,
+      category,
+      timestamp: new Date().toISOString(),
+      likes: 0,
+      comments: 0,
+      userLiked: false,
+      userBookmarked: false,
+      tags: []
+    };
+    
+    res.json(post);
+  });
+  
+  // Toggle post/comment like
+  app.post("/api/community/posts/like", requireAuth, async (req, res) => {
+    const userId = req.user?.id;
+    if (userId === undefined) {
+      return res.status(401).json({ message: "User ID not found" });
+    }
+    
+    const { id, liked } = req.body;
+    if (id === undefined) {
+      return res.status(400).json({ message: "Post ID is required" });
+    }
+    if (liked === undefined) {
+      return res.status(400).json({ message: "Liked status is required" });
+    }
+    
+    res.json({ success: true });
+  });
+  
+  app.post("/api/community/comments/like", requireAuth, async (req, res) => {
+    const userId = req.user?.id;
+    if (userId === undefined) {
+      return res.status(401).json({ message: "User ID not found" });
+    }
+    
+    const { id, liked } = req.body;
+    if (id === undefined) {
+      return res.status(400).json({ message: "Comment ID is required" });
+    }
+    if (liked === undefined) {
+      return res.status(400).json({ message: "Liked status is required" });
+    }
+    
+    res.json({ success: true });
+  });
+  
+  // Bookmark post
+  app.post("/api/community/posts/bookmark", requireAuth, async (req, res) => {
+    const userId = req.user?.id;
+    if (userId === undefined) {
+      return res.status(401).json({ message: "User ID not found" });
+    }
+    
+    const { id, bookmarked } = req.body;
+    if (id === undefined) {
+      return res.status(400).json({ message: "Post ID is required" });
+    }
+    if (bookmarked === undefined) {
+      return res.status(400).json({ message: "Bookmarked status is required" });
+    }
+    
+    res.json({ success: true });
+  });
 
   const httpServer = createServer(app);
   return httpServer;

@@ -1,8 +1,8 @@
 import { useLocation } from "wouter";
-import { Home, BarChart2, BookOpen, User } from "lucide-react";
+import { Home, BarChart2, BookOpen, User, MessageCircle } from "lucide-react";
 
 interface BottomNavigationProps {
-  activeTab: "home" | "progress" | "learn" | "profile";
+  activeTab: "home" | "progress" | "learn" | "profile" | "community";
 }
 
 export function BottomNavigation({ activeTab }: BottomNavigationProps) {
@@ -12,6 +12,7 @@ export function BottomNavigation({ activeTab }: BottomNavigationProps) {
     { id: "home", label: "Home", icon: Home, path: "/" },
     { id: "progress", label: "Progress", icon: BarChart2, path: "/progress" },
     { id: "learn", label: "Learn", icon: BookOpen, path: "/resources" },
+    { id: "community", label: "Community", icon: MessageCircle, path: "/community" },
     { id: "profile", label: "Profile", icon: User, path: "/profile" }
   ];
   

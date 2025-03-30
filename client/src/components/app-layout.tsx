@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/use-auth";
 
 interface AppLayoutProps {
   children: ReactNode;
-  activeTab?: "home" | "progress" | "learn" | "profile";
+  activeTab?: "home" | "progress" | "learn" | "profile" | "community";
 }
 
 export function AppLayout({ children, activeTab = "home" }: AppLayoutProps) {
