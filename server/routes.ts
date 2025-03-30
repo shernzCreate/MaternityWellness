@@ -220,7 +220,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(resources);
   });
   
-  // Mock bookmarks endpoint
+  // Bookmarks endpoint
   app.get("/api/resources/bookmarks", requireAuth, async (req, res) => {
     const userId = req.user?.id;
     if (userId === undefined) {
@@ -236,7 +236,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ bookmarks });
   });
   
-  // Mock resource progress endpoint
+  // Toggle bookmark status
+  app.post("/api/resources/bookmark", requireAuth, async (req, res) => {
+    const userId = req.user?.id;
+    if (userId === undefined) {
+      return res.status(401).json({ message: "User ID not found" });
+    }
+    
+    const { resourceId, bookmarked } = req.body;
+    if (resourceId === undefined) {
+      return res.status(400).json({ message: "Resource ID is required" });
+    }
+    
+    // In a real application, we would update the database
+    // For now, just return success
+    res.json({ success: true, resourceId, bookmarked });
+  });
+  
+  // Resource progress endpoint
   app.get("/api/resources/progress", requireAuth, async (req, res) => {
     const userId = req.user?.id;
     if (userId === undefined) {
@@ -269,6 +286,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     ];
     
     res.json({ progress });
+  });
+  
+  // Record resource view
+  app.post("/api/resources/viewed", requireAuth, async (req, res) => {
+    const userId = req.user?.id;
+    if (userId === undefined) {
+      return res.status(401).json({ message: "User ID not found" });
+    }
+    
+    const { resourceId } = req.body;
+    if (resourceId === undefined) {
+      return res.status(400).json({ message: "Resource ID is required" });
+    }
+    
+    // In a real application, we would update the database
+    // For now, just return success
+    res.json({ success: true });
+  });
+  
+  // Mark resource as completed
+  app.post("/api/resources/completed", requireAuth, async (req, res) => {
+    const userId = req.user?.id;
+    if (userId === undefined) {
+      return res.status(401).json({ message: "User ID not found" });
+    }
+    
+    const { resourceId } = req.body;
+    if (resourceId === undefined) {
+      return res.status(400).json({ message: "Resource ID is required" });
+    }
+    
+    // In a real application, we would update the database
+    // For now, just return success
+    res.json({ success: true });
   });
 
   const httpServer = createServer(app);

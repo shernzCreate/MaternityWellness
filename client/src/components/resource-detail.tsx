@@ -159,8 +159,31 @@ export function ResourceDetail({
     return { __html: content };
   };
 
+  // Extract YouTube video ID from content (if present)
+  const getVideoId = () => {
+    // Check if content has videoId in an HTML attribute
+    const videoIdMatch = content.match(/data-video-id="([^"]+)"/);
+    if (videoIdMatch && videoIdMatch[1]) {
+      return videoIdMatch[1];
+    }
+    
+    // Default videos for different categories
+    if (category === "exercise") {
+      // Gentle postpartum exercise video
+      return "6SCS-6RtgGg";
+    } else if (category === "selfcare") {
+      // Mindfulness for new mothers
+      return "Hd6fiRvfcAY";
+    } else {
+      // Default postpartum depression video
+      return "O4mHJUqAJ2k";
+    }
+  };
+
   // For videos, show video player
   if (type === 'video') {
+    const videoId = getVideoId();
+    
     return (
       <div className="flex flex-col min-h-screen bg-background pb-20">
         <div className="bg-primary text-white px-4 py-4 sticky top-0 z-10">
@@ -178,13 +201,27 @@ export function ResourceDetail({
         </div>
         
         <div className="flex-1 px-4 py-4">
-          <div className="aspect-video bg-neutral-900 mb-4 rounded-lg flex items-center justify-center">
-            <div className="text-center">
-              <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white mx-auto mb-2">
-                <polygon points="5 3 19 12 5 21 5 3"></polygon>
-              </svg>
-              <p className="text-white text-sm">Video player</p>
-            </div>
+          <div className="aspect-video bg-neutral-900 mb-4 rounded-lg overflow-hidden">
+            {videoId ? (
+              <iframe 
+                width="100%" 
+                height="100%" 
+                src={`https://www.youtube.com/embed/${videoId}`}
+                title={title}
+                frameBorder="0" 
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                allowFullScreen
+              ></iframe>
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white mx-auto mb-2">
+                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                  </svg>
+                  <p className="text-white text-sm">Video unavailable</p>
+                </div>
+              </div>
+            )}
           </div>
           
           <h1 className="text-2xl font-bold mb-2">{title}</h1>
@@ -225,7 +262,7 @@ export function ResourceDetail({
           </div>
           
           <div className="prose prose-sm max-w-none">
-            <p dangerouslySetInnerHTML={renderContent()} />
+            <div dangerouslySetInnerHTML={renderContent()} />
           </div>
         </div>
       </div>
