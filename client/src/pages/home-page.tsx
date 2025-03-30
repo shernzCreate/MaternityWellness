@@ -121,7 +121,10 @@ export default function HomePage() {
           </Card>
           
           {/* Support Chat */}
-          <Card className="cursor-pointer hover:shadow-md transition-shadow">
+          <Card 
+            className="cursor-pointer hover:shadow-md transition-shadow" 
+            onClick={() => navigate('/community?tab=chat')}
+          >
             <CardContent className="p-4">
               <div className="w-10 h-10 bg-success bg-opacity-20 rounded-lg flex items-center justify-center mb-3">
                 <MessageSquareHeart className="text-success h-5 w-5" />
@@ -132,7 +135,10 @@ export default function HomePage() {
           </Card>
           
           {/* Community */}
-          <Card className="cursor-pointer hover:shadow-md transition-shadow">
+          <Card 
+            className="cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => navigate('/community?tab=forum')}
+          >
             <CardContent className="p-4">
               <div className="w-10 h-10 bg-primary bg-opacity-20 rounded-lg flex items-center justify-center mb-3">
                 <Users className="text-primary h-5 w-5" />

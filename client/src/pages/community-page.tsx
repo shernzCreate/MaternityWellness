@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { AppLayout } from "@/components/app-layout";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
@@ -20,6 +21,16 @@ import { CommunityForum } from "@/components/community-forum";
 export default function CommunityPage() {
   const [activeTab, setActiveTab] = useState<"forum" | "chat">("forum");
   const { user } = useAuth();
+  const [location] = useLocation();
+  
+  // Check URL for tab parameter
+  useEffect(() => {
+    const params = new URLSearchParams(location.split('?')[1]);
+    const tabParam = params.get('tab');
+    if (tabParam === 'chat' || tabParam === 'forum') {
+      setActiveTab(tabParam);
+    }
+  }, [location]);
   
   return (
     <AppLayout activeTab="community">
