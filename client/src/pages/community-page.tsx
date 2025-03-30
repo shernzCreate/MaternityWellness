@@ -63,6 +63,47 @@ export default function CommunityPage() {
             <ChatSupport />
           </TabsContent>
         </Tabs>
+        
+        {/* Coming Soon / In Progress Features */}
+        <Card className="mt-8 bg-accent/10 border-accent">
+          <CardContent className="p-6">
+            <h3 className="font-bold text-lg mb-4 flex items-center">
+              <Clock className="w-5 h-5 mr-2 text-accent" />
+              Features In Progress
+            </h3>
+            <div className="space-y-3">
+              <div className="flex items-start gap-3">
+                <div className="bg-accent/20 p-1 rounded-full">
+                  <Users className="w-4 h-4 text-accent" />
+                </div>
+                <div>
+                  <h4 className="font-medium text-sm">Support Groups</h4>
+                  <p className="text-sm text-muted-foreground">Weekly virtual support groups led by experienced facilitators</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-3">
+                <div className="bg-accent/20 p-1 rounded-full">
+                  <Calendar className="w-4 h-4 text-accent" />
+                </div>
+                <div>
+                  <h4 className="font-medium text-sm">Events Calendar</h4>
+                  <p className="text-sm text-muted-foreground">Local and online events related to maternal mental health</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-3">
+                <div className="bg-accent/20 p-1 rounded-full">
+                  <MessageSquare className="w-4 h-4 text-accent" />
+                </div>
+                <div>
+                  <h4 className="font-medium text-sm">Private Messaging</h4>
+                  <p className="text-sm text-muted-foreground">Direct messaging between community members</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </AppLayout>
   );
