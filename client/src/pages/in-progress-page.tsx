@@ -481,7 +481,10 @@ export default function InProgressPage() {
     <AppLayout activeTab="progress">
       <div className="container py-6 max-w-4xl mx-auto">
         <div className="mb-6 text-center">
-          <h1 className="text-2xl font-bold">Your Progress</h1>
+          <div className="inline-flex items-center justify-center mb-2">
+            <LineChart className="h-8 w-8 text-primary mr-2" />
+            <h1 className="text-2xl font-bold">Your Progress</h1>
+          </div>
           <p className="text-muted-foreground mt-1">
             Track your mental health journey and app development updates
           </p>
