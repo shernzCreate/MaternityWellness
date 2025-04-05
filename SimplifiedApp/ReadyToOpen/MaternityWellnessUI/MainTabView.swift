@@ -14,13 +14,21 @@ struct MainTabView: View {
                 }
                 .tag(0)
             
+            // Progress Tab
+            ProgressView()
+                .tabItem {
+                    Image(systemName: "chart.bar.fill")
+                    Text("Progress")
+                }
+                .tag(1)
+            
             // Mood Tracker Tab
             MoodTrackerView()
                 .tabItem {
                     Image(systemName: "heart.fill")
                     Text("Mood")
                 }
-                .tag(1)
+                .tag(2)
             
             // Assessment Tab
             AssessmentView()
@@ -28,7 +36,7 @@ struct MainTabView: View {
                     Image(systemName: "checklist")
                     Text("Assessment")
                 }
-                .tag(2)
+                .tag(3)
             
             // Resources Tab
             ResourcesView()
@@ -36,70 +44,17 @@ struct MainTabView: View {
                     Image(systemName: "book.fill")
                     Text("Resources")
                 }
-                .tag(3)
+                .tag(4)
             
             // Profile/Settings Tab
-            ProfileView(isLoggedIn: $isLoggedIn)
+            ProfileView()
                 .tabItem {
                     Image(systemName: "person.fill")
                     Text("Profile")
                 }
-                .tag(4)
+                .tag(5)
         }
         .accentColor(ColorTheme.primaryPink) // Use the theme accent color for the selected tab
-    }
-}
-
-struct ProfileView: View {
-    @Binding var isLoggedIn: Bool
-    
-    var body: some View {
-        NavigationView {
-            ZStack {
-                ColorTheme.backgroundGradient
-                    .edgesIgnoringSafeArea(.all)
-                
-                VStack(spacing: 20) {
-                    // Profile Header
-                    VStack {
-                        Image(systemName: "person.circle.fill")
-                            .resizable()
-                            .frame(width: 100, height: 100)
-                            .foregroundColor(ColorTheme.primaryPink)
-                            .padding(.bottom, 10)
-                        
-                        Text("User Profile")
-                            .font(.largeTitle)
-                            .fontWeight(.bold)
-                            .foregroundColor(ColorTheme.textGray)
-                        
-                        Text("example@email.com")
-                            .foregroundColor(ColorTheme.textGray)
-                    }
-                    .padding(.top, 40)
-                    
-                    Spacer()
-                    
-                    // Logout Button
-                    Button(action: {
-                        isLoggedIn = false
-                    }) {
-                        Text("Log Out")
-                            .fontWeight(.semibold)
-                            .foregroundColor(.white)
-                            .padding()
-                            .frame(width: 200)
-                            .background(ColorTheme.buttonGradient)
-                            .cornerRadius(15)
-                            .shadow(color: ColorTheme.primaryPink.opacity(0.4), radius: 5, x: 0, y: 3)
-                    }
-                    .padding(.bottom, 50)
-                }
-                .padding()
-            }
-            .navigationTitle("Profile")
-            .navigationBarTitleDisplayMode(.inline)
-        }
     }
 }
 
