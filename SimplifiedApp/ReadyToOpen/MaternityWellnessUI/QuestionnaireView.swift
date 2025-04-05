@@ -1,217 +1,348 @@
 import SwiftUI
 
-struct QuestionnaireView: View {
-    let assessmentType: String
+enum QuestionnaireType {
+    case epds
+    case phq9
     
-    @State private var currentQuestionIndex = 0
-    @State private var answers: [Int] = []
-    @State private var showResult = false
-    @State private var totalScore = 0
-    
-    var questions: [(question: String, options: [(text: String, value: Int)])] {
-        if assessmentType == "EPDS" {
-            return epdsQuestions
-        } else {
-            return phq9Questions
+    var title: String {
+        switch self {
+        case .epds:
+            return "Edinburgh Postnatal Depression Scale"
+        case .phq9:
+            return "Patient Health Questionnaire (PHQ-9)"
         }
+    }
+    
+    var questions: [String] {
+        switch self {
+        case .epds:
+            return EPDSQuestions
+        case .phq9:
+            return PHQ9Questions
+        }
+    }
+    
+    var options: [String] {
+        switch self {
+        case .epds:
+            return ["0 - Not at all", "1 - Not very often", "2 - Yes, sometimes", "3 - Yes, most of the time"]
+        case .phq9:
+            return ["0 - Not at all", "1 - Several days", "2 - More than half the days", "3 - Nearly every day"]
+        }
+    }
+}
+
+// Edinburgh Postnatal Depression Scale (EPDS) Questions
+let EPDSQuestions = [
+    "I have been able to laugh and see the funny side of things",
+    "I have looked forward with enjoyment to things",
+    "I have blamed myself unnecessarily when things went wrong",
+    "I have been anxious or worried for no good reason",
+    "I have felt scared or panicky for no very good reason",
+    "Things have been getting on top of me",
+    "I have been so unhappy that I have had difficulty sleeping",
+    "I have felt sad or miserable",
+    "I have been so unhappy that I have been crying",
+    "The thought of harming myself has occurred to me"
+]
+
+// Patient Health Questionnaire-9 (PHQ-9) Questions
+let PHQ9Questions = [
+    "Little interest or pleasure in doing things",
+    "Feeling down, depressed, or hopeless",
+    "Trouble falling or staying asleep, or sleeping too much",
+    "Feeling tired or having little energy",
+    "Poor appetite or overeating",
+    "Feeling bad about yourself — or that you are a failure or have let yourself or your family down",
+    "Trouble concentrating on things, such as reading the newspaper or watching television",
+    "Moving or speaking so slowly that other people could have noticed? Or the opposite — being so fidgety or restless that you have been moving around a lot more than usual",
+    "Thoughts that you would be better off dead or of hurting yourself in some way"
+]
+
+struct QuestionnaireView: View {
+    let questionnaireType: QuestionnaireType
+    @State private var currentQuestion = 0
+    @State private var answers: [Int] = Array(repeating: -1, count: 10)
+    @State private var isCompleted = false
+    
+    var progress: CGFloat {
+        CGFloat(currentQuestion) / CGFloat(questionnaireType.questions.count)
+    }
+    
+    var totalScore: Int {
+        answers.reduce(0, +)
     }
     
     var body: some View {
-        VStack {
-            if showResult {
-                // Results View
-                resultsView
-            } else {
-                // Question View
-                questionView
-            }
-        }
-        .navigationTitle(assessmentType)
-        .navigationBarBackButtonHidden(true)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button(action: {
-                    if currentQuestionIndex > 0 && !showResult {
-                        currentQuestionIndex -= 1
-                    }
-                }) {
-                    Image(systemName: "chevron.left")
-                        .foregroundColor(.blue)
-                }
-                .disabled(currentQuestionIndex == 0 || showResult)
-            }
-        }
-    }
-    
-    var questionView: some View {
-        VStack(spacing: 20) {
-            // Progress indicator
-            HStack {
-                Text("Question \(currentQuestionIndex + 1) of \(questions.count)")
-                    .font(.subheadline)
-                    .foregroundColor(.gray)
-                
-                Spacer()
-                
-                ProgressView(value: Double(currentQuestionIndex + 1), total: Double(questions.count))
-                    .progressViewStyle(LinearProgressViewStyle())
-                    .frame(width: 100)
-            }
-            .padding()
+        ZStack {
+            ColorTheme.backgroundGradient
+                .edgesIgnoringSafeArea(.all)
             
-            // Question
-            Text(questions[currentQuestionIndex].question)
-                .font(.title3)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal)
-            
-            Spacer()
-            
-            // Options
-            VStack(spacing: 15) {
-                ForEach(0..<questions[currentQuestionIndex].options.count, id: \.self) { index in
-                    let option = questions[currentQuestionIndex].options[index]
-                    
-                    Button(action: {
-                        selectAnswer(option.value)
-                    }) {
-                        HStack {
-                            Text(option.text)
-                                .foregroundColor(.primary)
-                                .multilineTextAlignment(.leading)
+            if isCompleted {
+                // Results view
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 25) {
+                        VStack(alignment: .center, spacing: 15) {
+                            Text("Assessment Complete")
+                                .font(.title2)
+                                .fontWeight(.bold)
+                                .foregroundColor(ColorTheme.textGray)
+                                .multilineTextAlignment(.center)
+                                .padding(.top)
                             
-                            Spacer()
+                            Text("Your \(questionnaireType.title) Score")
+                                .font(.headline)
+                                .foregroundColor(ColorTheme.textGray)
                             
-                            if answers.count > currentQuestionIndex && answers[currentQuestionIndex] == option.value {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .foregroundColor(.blue)
-                            } else {
-                                Image(systemName: "circle")
+                            ZStack {
+                                Circle()
+                                    .stroke(Color.gray.opacity(0.2), lineWidth: 15)
+                                    .frame(width: 150, height: 150)
+                                
+                                Circle()
+                                    .trim(from: 0, to: CGFloat(totalScore) / (questionnaireType.type == .epds ? 30.0 : 27.0))
+                                    .stroke(scoreColor, lineWidth: 15)
+                                    .frame(width: 150, height: 150)
+                                    .rotationEffect(.degrees(-90))
+                                    .animation(.easeInOut, value: totalScore)
+                                
+                                Text("\(totalScore)")
+                                    .font(.system(size: 50, weight: .bold))
+                                    .foregroundColor(scoreColor)
+                            }
+                            .padding(.vertical)
+                            
+                            Text(interpretationText)
+                                .font(.headline)
+                                .foregroundColor(scoreColor)
+                                .multilineTextAlignment(.center)
+                                .padding()
+                                .frame(maxWidth: .infinity)
+                                .background(scoreColor.opacity(0.1))
+                                .cornerRadius(10)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.white.opacity(0.8))
+                        .cornerRadius(20)
+                        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
+                        .padding(.horizontal)
+                        
+                        // Recommendations
+                        VStack(alignment: .leading, spacing: 15) {
+                            Text("Recommendations")
+                                .font(.headline)
+                                .foregroundColor(ColorTheme.textGray)
+                            
+                            ForEach(recommendations, id: \.self) { recommendation in
+                                HStack(alignment: .top) {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .foregroundColor(ColorTheme.primaryPink)
+                                        .padding(.top, 3)
+                                    
+                                    Text(recommendation)
+                                        .font(.subheadline)
+                                        .foregroundColor(ColorTheme.textGray)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+                                .padding(.vertical, 5)
+                            }
+                            
+                            if totalScore >= 10 {
+                                Text("Note: This assessment is not a diagnosis. Please consult a healthcare professional for a proper evaluation.")
+                                    .font(.caption)
                                     .foregroundColor(.gray)
+                                    .padding(.top)
                             }
                         }
                         .padding()
-                        .background(
-                            RoundedRectangle(cornerRadius: 10)
-                                .fill(answers.count > currentQuestionIndex && answers[currentQuestionIndex] == option.value ? Color.blue.opacity(0.1) : Color(.systemGray6))
-                        )
+                        .background(Color.white.opacity(0.8))
+                        .cornerRadius(20)
+                        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
+                        .padding(.horizontal)
+                        
+                        // Buttons
+                        HStack {
+                            Button(action: {
+                                // Reset assessment
+                                currentQuestion = 0
+                                answers = Array(repeating: -1, count: 10)
+                                isCompleted = false
+                            }) {
+                                Text("Retake Assessment")
+                                    .fontWeight(.medium)
+                                    .foregroundColor(ColorTheme.textGray)
+                                    .padding()
+                                    .frame(maxWidth: .infinity)
+                                    .background(Color.white.opacity(0.8))
+                                    .cornerRadius(15)
+                                    .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 3)
+                            }
+                            
+                            NavigationLink(destination: ResourcesView()) {
+                                Text("View Resources")
+                                    .fontWeight(.medium)
+                                    .foregroundColor(.white)
+                                    .padding()
+                                    .frame(maxWidth: .infinity)
+                                    .background(ColorTheme.buttonGradient)
+                                    .cornerRadius(15)
+                                    .shadow(color: ColorTheme.primaryPink.opacity(0.3), radius: 5, x: 0, y: 3)
+                            }
+                        }
+                        .padding(.horizontal)
+                        .padding(.top, 10)
+                        
+                        Spacer(minLength: 50)
                     }
-                }
-            }
-            .padding()
-            
-            Spacer()
-            
-            // Next/Submit Button
-            Button(action: {
-                if answers.count > currentQuestionIndex {
-                    if currentQuestionIndex == questions.count - 1 {
-                        // Calculate total score and show results
-                        totalScore = answers.reduce(0, +)
-                        showResult = true
-                    } else {
-                        // Move to next question
-                        currentQuestionIndex += 1
-                    }
-                }
-            }) {
-                Text(currentQuestionIndex == questions.count - 1 ? "Submit" : "Next")
-                    .font(.headline)
-                    .foregroundColor(.white)
-                    .padding()
-                    .frame(maxWidth: .infinity)
-                    .background(answers.count > currentQuestionIndex ? Color.blue : Color.gray)
-                    .cornerRadius(10)
-            }
-            .disabled(!(answers.count > currentQuestionIndex))
-            .padding()
-        }
-    }
-    
-    var resultsView: some View {
-        ScrollView {
-            VStack(spacing: 20) {
-                Text("Assessment Complete")
-                    .font(.title)
-                    .fontWeight(.bold)
                     .padding(.top)
-                
-                Text("Your \(assessmentType) Score")
-                    .font(.headline)
-                    .foregroundColor(.gray)
-                
-                Text("\(totalScore)")
-                    .font(.system(size: 70, weight: .bold))
-                    .foregroundColor(scoreColor)
-                
-                // Interpretation
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Interpretation")
-                        .font(.headline)
+                }
+            } else {
+                // Question view
+                VStack(spacing: 20) {
+                    // Progress bar
+                    ZStack(alignment: .leading) {
+                        Rectangle()
+                            .frame(height: 10)
+                            .foregroundColor(Color.gray.opacity(0.3))
+                            .cornerRadius(5)
+                        
+                        Rectangle()
+                            .frame(width: UIScreen.main.bounds.width * progress, height: 10)
+                            .foregroundColor(ColorTheme.primaryPink)
+                            .cornerRadius(5)
+                            .animation(.easeInOut, value: progress)
+                    }
+                    .padding(.horizontal)
                     
-                    Text(interpretationText)
-                        .font(.body)
-                        .foregroundColor(.primary)
-                        .padding()
-                        .background(
-                            RoundedRectangle(cornerRadius: 10)
-                                .fill(Color(.systemGray6))
-                        )
-                    
-                    Text("Next Steps")
+                    // Question number
+                    Text("Question \(currentQuestion + 1) of \(questionnaireType.questions.count)")
                         .font(.headline)
+                        .foregroundColor(ColorTheme.textGray)
                         .padding(.top)
                     
-                    Text(nextStepsText)
-                        .font(.body)
-                        .foregroundColor(.primary)
+                    // Question text
+                    Text(questionnaireType.questions[currentQuestion])
+                        .font(.title3)
+                        .fontWeight(.medium)
+                        .foregroundColor(ColorTheme.textGray)
+                        .multilineTextAlignment(.center)
                         .padding()
-                        .background(
-                            RoundedRectangle(cornerRadius: 10)
-                                .fill(Color(.systemGray6))
-                        )
+                        .background(Color.white.opacity(0.8))
+                        .cornerRadius(15)
+                        .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 3)
+                        .padding(.horizontal)
                     
-                    Text("Important Note")
-                        .font(.headline)
-                        .padding(.top)
+                    // Answer options
+                    VStack(spacing: 10) {
+                        ForEach(0..<questionnaireType.options.count, id: \.self) { index in
+                            Button(action: {
+                                answers[currentQuestion] = index
+                                
+                                if currentQuestion < questionnaireType.questions.count - 1 {
+                                    currentQuestion += 1
+                                } else {
+                                    isCompleted = true
+                                }
+                            }) {
+                                HStack {
+                                    Text(questionnaireType.options[index])
+                                        .font(.subheadline)
+                                        .foregroundColor(ColorTheme.textGray)
+                                    
+                                    Spacer()
+                                    
+                                    if currentQuestion < answers.count && answers[currentQuestion] == index {
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .foregroundColor(ColorTheme.primaryPink)
+                                    } else {
+                                        Image(systemName: "circle")
+                                            .foregroundColor(Color.gray.opacity(0.5))
+                                    }
+                                }
+                                .padding()
+                                .background(
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .fill(
+                                            currentQuestion < answers.count && answers[currentQuestion] == index ?
+                                            Color.white : Color.white.opacity(0.5)
+                                        )
+                                )
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .stroke(
+                                            currentQuestion < answers.count && answers[currentQuestion] == index ?
+                                            ColorTheme.primaryPink : Color.clear,
+                                            lineWidth: 2
+                                        )
+                                )
+                            }
+                        }
+                    }
+                    .padding(.horizontal)
                     
-                    Text("This assessment is not a diagnosis. If you're experiencing distress or have concerns, please consult a healthcare professional.")
-                        .font(.body)
-                        .foregroundColor(.primary)
-                        .padding()
-                        .background(
-                            RoundedRectangle(cornerRadius: 10)
-                                .fill(Color(.systemGray6))
-                        )
+                    Spacer()
+                    
+                    // Navigation buttons
+                    HStack {
+                        if currentQuestion > 0 {
+                            Button(action: {
+                                currentQuestion -= 1
+                            }) {
+                                HStack {
+                                    Image(systemName: "chevron.left")
+                                    Text("Previous")
+                                }
+                                .fontWeight(.medium)
+                                .foregroundColor(ColorTheme.textGray)
+                                .padding()
+                                .frame(minWidth: 120)
+                                .background(Color.white.opacity(0.8))
+                                .cornerRadius(15)
+                                .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 3)
+                            }
+                        } else {
+                            Spacer().frame(minWidth: 120)
+                        }
+                        
+                        Spacer()
+                        
+                        if answers[currentQuestion] != -1 {
+                            Button(action: {
+                                if currentQuestion < questionnaireType.questions.count - 1 {
+                                    currentQuestion += 1
+                                } else {
+                                    isCompleted = true
+                                }
+                            }) {
+                                HStack {
+                                    Text(currentQuestion == questionnaireType.questions.count - 1 ? "Finish" : "Next")
+                                    Image(systemName: "chevron.right")
+                                }
+                                .fontWeight(.medium)
+                                .foregroundColor(.white)
+                                .padding()
+                                .frame(minWidth: 120)
+                                .background(ColorTheme.buttonGradient)
+                                .cornerRadius(15)
+                                .shadow(color: ColorTheme.primaryPink.opacity(0.3), radius: 5, x: 0, y: 3)
+                            }
+                        } else {
+                            Spacer().frame(minWidth: 120)
+                        }
+                    }
+                    .padding(.horizontal)
+                    .padding(.bottom, 30)
                 }
-                .padding()
-                
-                // Done Button
-                NavigationLink(destination: ResourcesView()) {
-                    Text("View Resources")
-                        .font(.headline)
-                        .foregroundColor(.white)
-                        .padding()
-                        .frame(maxWidth: .infinity)
-                        .background(Color.blue)
-                        .cornerRadius(10)
-                }
-                .padding()
             }
         }
-    }
-    
-    // Helper methods
-    func selectAnswer(_ value: Int) {
-        if answers.count > currentQuestionIndex {
-            answers[currentQuestionIndex] = value
-        } else {
-            answers.append(value)
-        }
+        .navigationTitle(questionnaireType.title)
+        .navigationBarTitleDisplayMode(.inline)
     }
     
     var scoreColor: Color {
-        if assessmentType == "EPDS" {
+        if questionnaireType == .epds {
+            // EPDS score interpretation
             if totalScore < 10 {
                 return .green
             } else if totalScore < 13 {
@@ -219,13 +350,16 @@ struct QuestionnaireView: View {
             } else {
                 return .red
             }
-        } else { // PHQ-9
+        } else {
+            // PHQ-9 score interpretation
             if totalScore < 5 {
                 return .green
             } else if totalScore < 10 {
-                return .blue
-            } else if totalScore < 15 {
                 return .orange
+            } else if totalScore < 15 {
+                return .orange.opacity(0.8)
+            } else if totalScore < 20 {
+                return .red.opacity(0.8)
             } else {
                 return .red
             }
@@ -233,231 +367,75 @@ struct QuestionnaireView: View {
     }
     
     var interpretationText: String {
-        if assessmentType == "EPDS" {
+        if questionnaireType == .epds {
+            // EPDS score interpretation
             if totalScore < 10 {
-                return "Your score suggests a low likelihood of depression. Continue with self-care practices."
+                return "Low Risk - Your score indicates a low risk of postpartum depression."
             } else if totalScore < 13 {
-                return "Your score suggests possible depression. Consider speaking with a healthcare provider."
+                return "Possible Depression - Your score suggests possible depression. Consider discussing with a healthcare provider."
             } else {
-                return "Your score suggests probable depression. It's recommended to consult with a healthcare provider soon."
+                return "Likely Depression - Your score indicates a higher likelihood of depression. Please consult a healthcare professional."
             }
-        } else { // PHQ-9
+        } else {
+            // PHQ-9 score interpretation
             if totalScore < 5 {
-                return "Your score suggests minimal or no depression."
+                return "Minimal Depression - Your score indicates minimal depression symptoms."
             } else if totalScore < 10 {
-                return "Your score suggests mild depression."
+                return "Mild Depression - Your score suggests mild depression symptoms."
             } else if totalScore < 15 {
-                return "Your score suggests moderate depression."
+                return "Moderate Depression - Your score indicates moderate depression. Consider consulting a healthcare provider."
             } else if totalScore < 20 {
-                return "Your score suggests moderately severe depression."
+                return "Moderately Severe Depression - Your score suggests moderately severe depression. Please consult a healthcare professional."
             } else {
-                return "Your score suggests severe depression."
+                return "Severe Depression - Your score indicates severe depression. Please seek help from a healthcare professional as soon as possible."
             }
         }
     }
     
-    var nextStepsText: String {
-        if assessmentType == "EPDS" {
-            if totalScore < 10 {
-                return "Continue self-care practices. Revisit the assessment in 2-4 weeks."
-            } else if totalScore < 13 {
-                return "Consider talking to a healthcare provider. Use resources in this app for support."
-            } else {
-                return "Please consult with a healthcare provider. You can find Singapore-specific resources in this app."
+    var recommendations: [String] {
+        var baseRecommendations = [
+            "Maintain regular sleep patterns",
+            "Get regular physical activity, even if just a short walk",
+            "Connect with friends or family members",
+            "Take time for self-care activities you enjoy"
+        ]
+        
+        if questionnaireType == .epds {
+            if totalScore >= 10 {
+                baseRecommendations.append("Discuss your feelings with your healthcare provider at your next appointment")
+            }
+            
+            if totalScore >= 13 {
+                baseRecommendations.append("Consider scheduling an appointment with a mental health professional")
+            }
+            
+            if totalScore >= 16 || answers[9] > 0 { // Question 10 relates to self-harm
+                baseRecommendations.insert("Contact a mental health professional soon - within the next week", at: 0)
             }
         } else { // PHQ-9
-            if totalScore < 5 {
-                return "Continue self-care practices."
-            } else if totalScore < 10 {
-                return "Consider watchful waiting and reassess in two weeks."
-            } else if totalScore < 15 {
-                return "Consider counseling and/or medication. Speak with a healthcare provider."
-            } else {
-                return "Active treatment with medication and/or therapy is recommended. Please consult a healthcare provider."
+            if totalScore >= 10 {
+                baseRecommendations.append("Discuss your feelings with your healthcare provider")
+            }
+            
+            if totalScore >= 15 {
+                baseRecommendations.append("Consider scheduling an appointment with a mental health professional")
+            }
+            
+            if totalScore >= 20 || answers[8] > 0 { // Question 9 relates to self-harm
+                baseRecommendations.insert("Contact a mental health professional soon - within the next week", at: 0)
             }
         }
+        
+        return baseRecommendations
     }
-    
-    let epdsQuestions = [
-        (
-            question: "I have been able to laugh and see the funny side of things",
-            options: [
-                (text: "As much as I always could", value: 0),
-                (text: "Not quite so much now", value: 1),
-                (text: "Definitely not so much now", value: 2),
-                (text: "Not at all", value: 3)
-            ]
-        ),
-        (
-            question: "I have looked forward with enjoyment to things",
-            options: [
-                (text: "As much as I ever did", value: 0),
-                (text: "Rather less than I used to", value: 1),
-                (text: "Definitely less than I used to", value: 2),
-                (text: "Hardly at all", value: 3)
-            ]
-        ),
-        (
-            question: "I have blamed myself unnecessarily when things went wrong",
-            options: [
-                (text: "No, never", value: 0),
-                (text: "Not very often", value: 1),
-                (text: "Yes, some of the time", value: 2),
-                (text: "Yes, most of the time", value: 3)
-            ]
-        ),
-        (
-            question: "I have been anxious or worried for no good reason",
-            options: [
-                (text: "No, not at all", value: 0),
-                (text: "Hardly ever", value: 1),
-                (text: "Yes, sometimes", value: 2),
-                (text: "Yes, very often", value: 3)
-            ]
-        ),
-        (
-            question: "I have felt scared or panicky for no very good reason",
-            options: [
-                (text: "No, not at all", value: 0),
-                (text: "No, not much", value: 1),
-                (text: "Yes, sometimes", value: 2),
-                (text: "Yes, quite a lot", value: 3)
-            ]
-        ),
-        (
-            question: "Things have been getting on top of me",
-            options: [
-                (text: "No, I have been coping as well as ever", value: 0),
-                (text: "No, most of the time I have coped quite well", value: 1),
-                (text: "Yes, sometimes I haven't been coping as well as usual", value: 2),
-                (text: "Yes, most of the time I haven't been able to cope at all", value: 3)
-            ]
-        ),
-        (
-            question: "I have been so unhappy that I have had difficulty sleeping",
-            options: [
-                (text: "No, not at all", value: 0),
-                (text: "Not very often", value: 1),
-                (text: "Yes, sometimes", value: 2),
-                (text: "Yes, most of the time", value: 3)
-            ]
-        ),
-        (
-            question: "I have felt sad or miserable",
-            options: [
-                (text: "No, not at all", value: 0),
-                (text: "Not very often", value: 1),
-                (text: "Yes, quite often", value: 2),
-                (text: "Yes, most of the time", value: 3)
-            ]
-        ),
-        (
-            question: "I have been so unhappy that I have been crying",
-            options: [
-                (text: "No, never", value: 0),
-                (text: "Only occasionally", value: 1),
-                (text: "Yes, quite often", value: 2),
-                (text: "Yes, most of the time", value: 3)
-            ]
-        ),
-        (
-            question: "The thought of harming myself has occurred to me",
-            options: [
-                (text: "Never", value: 0),
-                (text: "Hardly ever", value: 1),
-                (text: "Sometimes", value: 2),
-                (text: "Yes, quite often", value: 3)
-            ]
-        )
-    ]
-    
-    let phq9Questions = [
-        (
-            question: "Little interest or pleasure in doing things",
-            options: [
-                (text: "Not at all", value: 0),
-                (text: "Several days", value: 1),
-                (text: "More than half the days", value: 2),
-                (text: "Nearly every day", value: 3)
-            ]
-        ),
-        (
-            question: "Feeling down, depressed, or hopeless",
-            options: [
-                (text: "Not at all", value: 0),
-                (text: "Several days", value: 1),
-                (text: "More than half the days", value: 2),
-                (text: "Nearly every day", value: 3)
-            ]
-        ),
-        (
-            question: "Trouble falling or staying asleep, or sleeping too much",
-            options: [
-                (text: "Not at all", value: 0),
-                (text: "Several days", value: 1),
-                (text: "More than half the days", value: 2),
-                (text: "Nearly every day", value: 3)
-            ]
-        ),
-        (
-            question: "Feeling tired or having little energy",
-            options: [
-                (text: "Not at all", value: 0),
-                (text: "Several days", value: 1),
-                (text: "More than half the days", value: 2),
-                (text: "Nearly every day", value: 3)
-            ]
-        ),
-        (
-            question: "Poor appetite or overeating",
-            options: [
-                (text: "Not at all", value: 0),
-                (text: "Several days", value: 1),
-                (text: "More than half the days", value: 2),
-                (text: "Nearly every day", value: 3)
-            ]
-        ),
-        (
-            question: "Feeling bad about yourself — or that you are a failure or have let yourself or your family down",
-            options: [
-                (text: "Not at all", value: 0),
-                (text: "Several days", value: 1),
-                (text: "More than half the days", value: 2),
-                (text: "Nearly every day", value: 3)
-            ]
-        ),
-        (
-            question: "Trouble concentrating on things, such as reading the newspaper or watching television",
-            options: [
-                (text: "Not at all", value: 0),
-                (text: "Several days", value: 1),
-                (text: "More than half the days", value: 2),
-                (text: "Nearly every day", value: 3)
-            ]
-        ),
-        (
-            question: "Moving or speaking so slowly that other people could have noticed? Or the opposite — being so fidgety or restless that you have been moving around a lot more than usual",
-            options: [
-                (text: "Not at all", value: 0),
-                (text: "Several days", value: 1),
-                (text: "More than half the days", value: 2),
-                (text: "Nearly every day", value: 3)
-            ]
-        ),
-        (
-            question: "Thoughts that you would be better off dead or of hurting yourself in some way",
-            options: [
-                (text: "Not at all", value: 0),
-                (text: "Several days", value: 1),
-                (text: "More than half the days", value: 2),
-                (text: "Nearly every day", value: 3)
-            ]
-        )
-    ]
+}
+
+extension QuestionnaireType {
+    var type: Self { self }
 }
 
 struct QuestionnaireView_Previews: PreviewProvider {
     static var previews: some View {
-        QuestionnaireView(assessmentType: "EPDS")
+        QuestionnaireView(questionnaireType: .epds)
     }
 }

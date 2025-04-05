@@ -1,187 +1,216 @@
 import SwiftUI
 
 struct HomeView: View {
-    @State private var currentMood: String = "neutral"
-    @State private var showMoodTracker = false
+    @State private var latestMood: String = "😊"
+    @State private var lastAssessmentScore: Int = 5
+    @State private var lastAssessmentDate: Date = Date().addingTimeInterval(-7*24*60*60) // 7 days ago
+    
+    let dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        return formatter
+    }()
     
     var body: some View {
         NavigationView {
             ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    // Welcome Section
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("Welcome Back")
-                            .font(.title)
-                            .fontWeight(.bold)
-                        
-                        Text("How are you feeling today?")
-                            .font(.subheadline)
-                            .foregroundColor(.gray)
-                    }
-                    .padding()
+                ZStack {
+                    ColorTheme.backgroundGradient
+                        .edgesIgnoringSafeArea(.all)
                     
-                    // Mood Tracker Card
-                    VStack {
-                        HStack {
-                            Text("Today's Mood")
-                                .font(.headline)
-                            Spacer()
-                            Button("Update") {
-                                showMoodTracker = true
-                            }
-                            .font(.subheadline)
-                            .foregroundColor(.blue)
+                    VStack(spacing: 20) {
+                        // Welcome Section
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Welcome Back")
+                                .font(.title)
+                                .fontWeight(.bold)
+                                .foregroundColor(ColorTheme.textGray)
+                            
+                            Text("How are you feeling today?")
+                                .font(.subheadline)
+                                .foregroundColor(ColorTheme.textGray)
                         }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal)
+                        .padding(.top, 20)
                         
-                        HStack(spacing: 25) {
-                            moodIcon(name: "😊", isSelected: currentMood == "happy")
-                            moodIcon(name: "😐", isSelected: currentMood == "neutral")
-                            moodIcon(name: "😔", isSelected: currentMood == "sad")
-                            moodIcon(name: "😢", isSelected: currentMood == "depressed")
-                            moodIcon(name: "😡", isSelected: currentMood == "angry")
+                        // Daily Check-in Card
+                        VStack(spacing: 15) {
+                            HStack {
+                                Text("Daily Check-in")
+                                    .font(.headline)
+                                    .foregroundColor(ColorTheme.textGray)
+                                
+                                Spacer()
+                                
+                                Image(systemName: "heart.fill")
+                                    .foregroundColor(ColorTheme.primaryPink)
+                            }
+                            
+                            Divider()
+                            
+                            HStack(spacing: 20) {
+                                ForEach(["😊", "😐", "😢", "😡", "😴"], id: \.self) { emoji in
+                                    Button(action: {
+                                        latestMood = emoji
+                                    }) {
+                                        Text(emoji)
+                                            .font(.system(size: 35))
+                                            .padding(10)
+                                            .background(
+                                                Circle()
+                                                    .fill(latestMood == emoji ? 
+                                                          Color.white : Color.clear)
+                                                    .shadow(color: latestMood == emoji ? 
+                                                            ColorTheme.primaryPink.opacity(0.3) : Color.clear, 
+                                                            radius: 5, x: 0, y: 3)
+                                            )
+                                    }
+                                }
+                            }
+                            
+                            Button(action: {
+                                // Save the mood action
+                            }) {
+                                Text("Save Mood")
+                                    .fontWeight(.medium)
+                                    .foregroundColor(.white)
+                                    .padding(.vertical, 12)
+                                    .frame(maxWidth: .infinity)
+                                    .background(ColorTheme.buttonGradient)
+                                    .cornerRadius(15)
+                                    .shadow(color: ColorTheme.primaryPink.opacity(0.3), radius: 5, x: 0, y: 3)
+                            }
                         }
                         .padding()
-                    }
-                    .background(Color(.systemGray6))
-                    .cornerRadius(12)
-                    .padding(.horizontal)
-                    
-                    // Quick Assessment
-                    VStack(alignment: .leading, spacing: 15) {
-                        Text("Quick Assessment")
-                            .font(.headline)
-                            .padding(.horizontal)
+                        .background(Color.white.opacity(0.8))
+                        .cornerRadius(20)
+                        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
+                        .padding(.horizontal)
                         
-                        NavigationLink(destination: AssessmentView()) {
-                            HStack {
-                                Image(systemName: "clipboard.fill")
-                                    .foregroundColor(.blue)
-                                
-                                VStack(alignment: .leading) {
-                                    Text("EPDS Questionnaire")
-                                        .font(.subheadline)
-                                        .fontWeight(.semibold)
-                                    
-                                    Text("Edinburgh Postnatal Depression Scale")
-                                        .font(.caption)
-                                        .foregroundColor(.gray)
-                                }
-                                
-                                Spacer()
-                                
-                                Image(systemName: "chevron.right")
-                                    .foregroundColor(.gray)
-                            }
-                            .padding()
-                            .background(Color(.systemGray6))
-                            .cornerRadius(12)
-                            .padding(.horizontal)
-                        }
-                        
-                        NavigationLink(destination: AssessmentView()) {
-                            HStack {
-                                Image(systemName: "clipboard.fill")
-                                    .foregroundColor(.blue)
-                                
-                                VStack(alignment: .leading) {
-                                    Text("PHQ-9 Questionnaire")
-                                        .font(.subheadline)
-                                        .fontWeight(.semibold)
-                                    
-                                    Text("Patient Health Questionnaire")
-                                        .font(.caption)
-                                        .foregroundColor(.gray)
-                                }
-                                
-                                Spacer()
-                                
-                                Image(systemName: "chevron.right")
-                                    .foregroundColor(.gray)
-                            }
-                            .padding()
-                            .background(Color(.systemGray6))
-                            .cornerRadius(12)
-                            .padding(.horizontal)
-                        }
-                    }
-                    
-                    // Featured Resources
-                    VStack(alignment: .leading, spacing: 15) {
-                        HStack {
-                            Text("Featured Resources")
+                        // Quick Access Features
+                        VStack(alignment: .leading, spacing: 15) {
+                            Text("Quick Access")
                                 .font(.headline)
+                                .foregroundColor(ColorTheme.textGray)
+                                .padding(.horizontal)
                             
-                            Spacer()
-                            
-                            NavigationLink(destination: ResourcesView()) {
-                                Text("See All")
-                                    .font(.subheadline)
-                                    .foregroundColor(.blue)
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 20) {
+                                    // Assessment Card
+                                    NavigationLink(destination: AssessmentView()) {
+                                        QuickAccessCard(
+                                            title: "Assessment",
+                                            iconName: "checklist",
+                                            description: "Check your mental wellbeing",
+                                            color: ColorTheme.primaryPink
+                                        )
+                                    }
+                                    
+                                    // Resources Card
+                                    NavigationLink(destination: ResourcesView()) {
+                                        QuickAccessCard(
+                                            title: "Resources",
+                                            iconName: "book.fill",
+                                            description: "Learn about postpartum care",
+                                            color: ColorTheme.primaryPink
+                                        )
+                                    }
+                                    
+                                    // Mood History
+                                    NavigationLink(destination: MoodTrackerView()) {
+                                        QuickAccessCard(
+                                            title: "Mood History",
+                                            iconName: "chart.line.uptrend.xyaxis",
+                                            description: "View your mood patterns",
+                                            color: ColorTheme.primaryPink
+                                        )
+                                    }
+                                }
+                                .padding(.horizontal)
                             }
+                        }
+                        
+                        // Last Assessment Summary
+                        VStack(alignment: .leading, spacing: 15) {
+                            Text("Your Last Assessment")
+                                .font(.headline)
+                                .foregroundColor(ColorTheme.textGray)
+                            
+                            VStack(alignment: .leading, spacing: 10) {
+                                HStack {
+                                    Text("EPDS Score: \(lastAssessmentScore)")
+                                        .font(.subheadline)
+                                        .fontWeight(.medium)
+                                    
+                                    Spacer()
+                                    
+                                    Text(dateFormatter.string(from: lastAssessmentDate))
+                                        .font(.caption)
+                                        .foregroundColor(.gray)
+                                }
+                                
+                                Text("Your score is in the low-risk range. Continue to monitor your feelings and check in regularly.")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                                
+                                NavigationLink(destination: AssessmentView()) {
+                                    Text("Take New Assessment")
+                                        .font(.subheadline)
+                                        .fontWeight(.medium)
+                                        .foregroundColor(.white)
+                                        .padding(.vertical, 10)
+                                        .padding(.horizontal, 20)
+                                        .background(ColorTheme.buttonGradient)
+                                        .cornerRadius(15)
+                                        .shadow(color: ColorTheme.primaryPink.opacity(0.3), radius: 5, x: 0, y: 3)
+                                }
+                                .padding(.top, 5)
+                            }
+                            .padding()
+                            .background(Color.white.opacity(0.8))
+                            .cornerRadius(15)
+                            .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 3)
                         }
                         .padding(.horizontal)
                         
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 15) {
-                                resourceCard(
-                                    title: "Coping with PPD",
-                                    description: "Strategies from KK Hospital experts",
-                                    imageName: "heart.fill"
-                                )
-                                
-                                resourceCard(
-                                    title: "Self-Care Tips",
-                                    description: "Essential self-care for new mothers",
-                                    imageName: "plus.circle.fill"
-                                )
-                                
-                                resourceCard(
-                                    title: "Support Networks",
-                                    description: "Singapore community resources",
-                                    imageName: "person.3.fill"
-                                )
-                            }
-                            .padding(.horizontal)
-                        }
+                        Spacer(minLength: 30)
                     }
                 }
-                .padding(.vertical)
             }
             .navigationTitle("Home")
-            .sheet(isPresented: $showMoodTracker) {
-                MoodTrackerView(selectedMood: $currentMood)
-            }
+            .navigationBarTitleDisplayMode(.inline)
         }
     }
+}
+
+struct QuickAccessCard: View {
+    var title: String
+    var iconName: String
+    var description: String
+    var color: Color
     
-    private func moodIcon(name: String, isSelected: Bool) -> some View {
-        Text(name)
-            .font(.system(size: 30))
-            .padding(10)
-            .background(isSelected ? Color.blue.opacity(0.2) : Color.clear)
-            .cornerRadius(10)
-    }
-    
-    private func resourceCard(title: String, description: String, imageName: String) -> some View {
-        VStack(alignment: .leading) {
-            Image(systemName: imageName)
-                .font(.largeTitle)
-                .foregroundColor(.blue)
-                .padding(.bottom, 5)
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Image(systemName: iconName)
+                .font(.title)
+                .foregroundColor(color)
             
             Text(title)
                 .font(.headline)
+                .foregroundColor(ColorTheme.textGray)
             
             Text(description)
                 .font(.caption)
-                .foregroundColor(.gray)
+                .foregroundColor(Color.gray)
                 .lineLimit(2)
+                .multilineTextAlignment(.leading)
         }
         .padding()
-        .frame(width: 160, height: 160)
-        .background(Color(.systemGray6))
-        .cornerRadius(12)
+        .frame(width: 150, height: 150)
+        .background(Color.white.opacity(0.8))
+        .cornerRadius(15)
+        .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 3)
     }
 }
 

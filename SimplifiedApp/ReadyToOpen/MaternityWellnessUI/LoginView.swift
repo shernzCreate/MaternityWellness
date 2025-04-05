@@ -10,19 +10,27 @@ struct LoginView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                Color.white.edgesIgnoringSafeArea(.all)
+                // Beautiful gradient background from the app icon
+                ColorTheme.backgroundGradient
+                    .edgesIgnoringSafeArea(.all)
                 
                 VStack {
                     // Logo & Welcome Message
                     VStack(spacing: 20) {
+                        Image("AppIcon")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 150, height: 150)
+                            .padding(.bottom, 10)
+                            
                         Text("Maternity Wellness")
                             .font(.largeTitle)
                             .fontWeight(.bold)
-                            .foregroundColor(Color.blue)
+                            .foregroundColor(ColorTheme.textGray)
                         
                         Text("Support for new mothers in Singapore")
                             .font(.subheadline)
-                            .foregroundColor(.gray)
+                            .foregroundColor(ColorTheme.textGray)
                     }
                     .padding(.top, 50)
                     .padding(.bottom, 40)
@@ -31,15 +39,17 @@ struct LoginView: View {
                     VStack(spacing: 20) {
                         TextField("Email", text: $email)
                             .padding()
-                            .background(Color(.systemGray6))
+                            .background(Color.white.opacity(0.8))
                             .cornerRadius(10)
                             .keyboardType(.emailAddress)
                             .autocapitalization(.none)
+                            .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 5)
                         
                         SecureField("Password", text: $password)
                             .padding()
-                            .background(Color(.systemGray6))
+                            .background(Color.white.opacity(0.8))
                             .cornerRadius(10)
+                            .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 5)
                         
                         // Error message (if needed)
                         if showError {
@@ -62,8 +72,9 @@ struct LoginView: View {
                                 .foregroundColor(.white)
                                 .padding()
                                 .frame(maxWidth: .infinity)
-                                .background(Color.blue)
-                                .cornerRadius(10)
+                                .background(ColorTheme.buttonGradient)
+                                .cornerRadius(15)
+                                .shadow(color: ColorTheme.primaryPink.opacity(0.4), radius: 10, x: 0, y: 5)
                         }
                         .padding(.top, 10)
                         
@@ -72,7 +83,7 @@ struct LoginView: View {
                             showRegistration = true
                         }) {
                             Text("Don't have an account? Sign up")
-                                .foregroundColor(.blue)
+                                .foregroundColor(ColorTheme.textGray)
                                 .padding(.top, 10)
                         }
                     }
@@ -83,7 +94,7 @@ struct LoginView: View {
                     // Footer with version info
                     Text("Version 1.0")
                         .font(.caption)
-                        .foregroundColor(.gray)
+                        .foregroundColor(ColorTheme.textGray)
                         .padding(.bottom, 20)
                 }
             }
@@ -107,38 +118,46 @@ struct RegistrationView: View {
     
     var body: some View {
         NavigationView {
-            Form {
-                Section(header: Text("Personal Information")) {
-                    TextField("Full Name", text: $name)
-                    TextField("Email", text: $email)
-                        .keyboardType(.emailAddress)
-                        .autocapitalization(.none)
-                }
+            ZStack {
+                ColorTheme.backgroundGradient
+                    .edgesIgnoringSafeArea(.all)
                 
-                Section(header: Text("Security")) {
-                    SecureField("Password", text: $password)
-                    SecureField("Confirm Password", text: $confirmPassword)
-                }
-                
-                if showError {
+                Form {
+                    Section(header: Text("Personal Information").foregroundColor(ColorTheme.textGray)) {
+                        TextField("Full Name", text: $name)
+                            .foregroundColor(ColorTheme.textGray)
+                        TextField("Email", text: $email)
+                            .keyboardType(.emailAddress)
+                            .autocapitalization(.none)
+                            .foregroundColor(ColorTheme.textGray)
+                    }
+                    
+                    Section(header: Text("Security").foregroundColor(ColorTheme.textGray)) {
+                        SecureField("Password", text: $password)
+                        SecureField("Confirm Password", text: $confirmPassword)
+                    }
+                    
+                    if showError {
+                        Section {
+                            Text(errorMessage)
+                                .foregroundColor(.red)
+                                .font(.caption)
+                        }
+                    }
+                    
                     Section {
-                        Text(errorMessage)
-                            .foregroundColor(.red)
-                            .font(.caption)
+                        Button(action: registerUser) {
+                            Text("Register")
+                                .fontWeight(.semibold)
+                                .foregroundColor(.white)
+                                .padding()
+                                .frame(maxWidth: .infinity)
+                                .background(ColorTheme.buttonGradient)
+                                .cornerRadius(10)
+                        }
                     }
                 }
-                
-                Section {
-                    Button(action: registerUser) {
-                        Text("Register")
-                            .fontWeight(.semibold)
-                            .foregroundColor(.white)
-                            .padding()
-                            .frame(maxWidth: .infinity)
-                            .background(Color.blue)
-                            .cornerRadius(10)
-                    }
-                }
+                .scrollContentBackground(.hidden)
             }
             .navigationTitle("Create Account")
             .toolbar {
@@ -146,6 +165,7 @@ struct RegistrationView: View {
                     Button("Cancel") {
                         presentationMode.wrappedValue.dismiss()
                     }
+                    .foregroundColor(ColorTheme.primaryPink)
                 }
             }
         }

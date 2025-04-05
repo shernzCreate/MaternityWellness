@@ -1,298 +1,309 @@
 import SwiftUI
 
 struct ResourcesView: View {
-    @State private var searchText = ""
-    @State private var selectedFilter: ResourceFilter = .all
-    
-    enum ResourceFilter: String, CaseIterable {
-        case all = "All"
-        case articles = "Articles"
-        case videos = "Videos"
-        case community = "Community"
-    }
-    
-    // Sample resources data
-    let resources = [
-        ResourceItem(id: 1, title: "Understanding PPD", description: "An overview of postpartum depression symptoms and causes.", category: "Education", type: "Articles", source: "KK Hospital"),
-        ResourceItem(id: 2, title: "Coping Strategies", description: "Practical techniques to manage PPD symptoms day to day.", category: "Self-help", type: "Articles", source: "NUH"),
-        ResourceItem(id: 3, title: "Postpartum Exercises", description: "Safe exercises for recovery after childbirth.", category: "Physical Health", type: "Videos", source: "MOH Singapore"),
-        ResourceItem(id: 4, title: "Local Support Groups", description: "Information on Singapore-based support groups for new mothers.", category: "Support", type: "Community", source: "Community Resources"),
-        ResourceItem(id: 5, title: "Impact on Family", description: "How PPD affects children and spouses and ways to cope as a family.", category: "Family", type: "Articles", source: "Singapore Parenting Society"),
-        ResourceItem(id: 6, title: "Meditation for New Mothers", description: "Guided meditation sessions specifically for the postpartum period.", category: "Self-help", type: "Videos", source: "Mental Health Singapore")
-    ]
-    
-    var filteredResources: [ResourceItem] {
-        let filtered = resources.filter { resource in
-            if selectedFilter != .all && resource.type != selectedFilter.rawValue {
-                return false
-            }
-            
-            if !searchText.isEmpty {
-                return resource.title.lowercased().contains(searchText.lowercased()) ||
-                       resource.description.lowercased().contains(searchText.lowercased()) ||
-                       resource.category.lowercased().contains(searchText.lowercased())
-            }
-            
-            return true
-        }
-        
-        return filtered
-    }
+    @State private var selectedCategory: ResourceCategory = .ppd
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 0) {
-                // Search bar
-                HStack {
-                    Image(systemName: "magnifyingglass")
-                        .foregroundColor(.gray)
+            ZStack {
+                ColorTheme.backgroundGradient
+                    .edgesIgnoringSafeArea(.all)
+                
+                VStack(spacing: 0) {
+                    // Category selector
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 15) {
+                            ForEach(ResourceCategory.allCases, id: \.self) { category in
+                                CategoryButton(
+                                    title: category.title,
+                                    isSelected: selectedCategory == category,
+                                    action: { selectedCategory = category }
+                                )
+                            }
+                        }
+                        .padding(.horizontal)
+                        .padding(.vertical, 10)
+                    }
                     
-                    TextField("Search resources", text: $searchText)
-                        .textFieldStyle(PlainTextFieldStyle())
-                }
-                .padding()
-                .background(Color(.systemGray6))
-                .cornerRadius(10)
-                .padding(.horizontal)
-                
-                // Filter tabs
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 15) {
-                        ForEach(ResourceFilter.allCases, id: \.self) { filter in
-                            Button(action: {
-                                selectedFilter = filter
-                            }) {
-                                Text(filter.rawValue)
-                                    .padding(.vertical, 8)
-                                    .padding(.horizontal, 16)
-                                    .background(selectedFilter == filter ? Color.blue : Color.clear)
-                                    .foregroundColor(selectedFilter == filter ? .white : .blue)
-                                    .cornerRadius(20)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 20)
-                                            .stroke(Color.blue, lineWidth: 1)
-                                    )
+                    // Resources list
+                    ScrollView {
+                        LazyVStack(spacing: 15) {
+                            ForEach(resourcesFor(category: selectedCategory), id: \.title) { resource in
+                                ResourceCard(resource: resource)
                             }
                         }
+                        .padding(.horizontal)
+                        .padding(.vertical, 10)
                     }
-                    .padding()
-                }
-                
-                // Resource list
-                if filteredResources.isEmpty {
-                    VStack(spacing: 20) {
-                        Image(systemName: "doc.text.magnifyingglass")
-                            .font(.system(size: 50))
-                            .foregroundColor(.gray)
-                        
-                        Text("No resources found")
-                            .font(.headline)
-                        
-                        Text("Try adjusting your search or filter")
-                            .font(.subheadline)
-                            .foregroundColor(.gray)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Color(.systemBackground))
-                } else {
-                    List {
-                        ForEach(filteredResources) { resource in
-                            NavigationLink(destination: ResourceDetailView(resource: resource)) {
-                                ResourceRowView(resource: resource)
-                            }
-                        }
-                    }
-                    .listStyle(InsetListStyle())
                 }
             }
             .navigationTitle("Resources")
+            .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+    
+    func resourcesFor(category: ResourceCategory) -> [Resource] {
+        switch category {
+        case .ppd:
+            return ppdResources
+        case .support:
+            return supportResources
+        case .selfCare:
+            return selfCareResources
+        case .localInfo:
+            return localResources
         }
     }
 }
 
-struct ResourceItem: Identifiable {
-    let id: Int
+struct CategoryButton: View {
     let title: String
-    let description: String
-    let category: String
-    let type: String
-    let source: String
-    var content: String {
-        "This is placeholder content for \(title). In a real application, this would contain the full article or video content."
-    }
-}
-
-struct ResourceRowView: View {
-    let resource: ResourceItem
-    
-    var typeIcon: String {
-        switch resource.type {
-        case "Articles":
-            return "doc.text"
-        case "Videos":
-            return "play.rectangle"
-        case "Community":
-            return "person.3"
-        default:
-            return "doc"
-        }
-    }
-    
-    var typeColor: Color {
-        switch resource.type {
-        case "Articles":
-            return .blue
-        case "Videos":
-            return .red
-        case "Community":
-            return .green
-        default:
-            return .gray
-        }
-    }
+    let isSelected: Bool
+    let action: () -> Void
     
     var body: some View {
-        HStack(spacing: 15) {
-            // Icon based on type
-            Image(systemName: typeIcon)
-                .font(.system(size: 24))
-                .foregroundColor(.white)
-                .frame(width: 40, height: 40)
-                .background(typeColor)
-                .cornerRadius(8)
-            
-            VStack(alignment: .leading, spacing: 3) {
+        Button(action: action) {
+            Text(title)
+                .font(.subheadline)
+                .fontWeight(isSelected ? .semibold : .medium)
+                .foregroundColor(isSelected ? .white : ColorTheme.textGray)
+                .padding(.vertical, 8)
+                .padding(.horizontal, 16)
+                .background(isSelected ? ColorTheme.buttonGradient : Color.white.opacity(0.8))
+                .cornerRadius(20)
+                .shadow(color: isSelected ? ColorTheme.primaryPink.opacity(0.3) : Color.black.opacity(0.05), radius: 5, x: 0, y: 3)
+        }
+    }
+}
+
+struct ResourceCard: View {
+    let resource: Resource
+    @State private var isExpanded = false
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Image(systemName: resource.iconName)
+                    .font(.title2)
+                    .foregroundColor(ColorTheme.primaryPink)
+                    .frame(width: 30)
+                
                 Text(resource.title)
                     .font(.headline)
+                    .foregroundColor(ColorTheme.textGray)
                 
-                Text(resource.description)
-                    .font(.caption)
-                    .foregroundColor(.gray)
-                    .lineLimit(2)
+                Spacer()
                 
-                HStack {
-                    Text(resource.source)
-                        .font(.caption2)
-                        .foregroundColor(.blue)
-                    
-                    Text("•")
-                        .font(.caption2)
-                        .foregroundColor(.gray)
-                    
-                    Text(resource.category)
-                        .font(.caption2)
-                        .foregroundColor(.gray)
+                Button(action: {
+                    withAnimation {
+                        isExpanded.toggle()
+                    }
+                }) {
+                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                        .foregroundColor(ColorTheme.textGray)
                 }
             }
+            
+            if isExpanded {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text(resource.description)
+                        .font(.subheadline)
+                        .foregroundColor(ColorTheme.textGray)
+                        .fixedSize(horizontal: false, vertical: true)
+                    
+                    if let source = resource.source {
+                        Text("Source: \(source)")
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                    }
+                    
+                    if resource.hasLink {
+                        HStack {
+                            Spacer()
+                            
+                            Button(action: {
+                                // In a real app, this would open the link
+                            }) {
+                                Text("Open Resource")
+                                    .font(.footnote)
+                                    .fontWeight(.medium)
+                                    .foregroundColor(.white)
+                                    .padding(.vertical, 8)
+                                    .padding(.horizontal, 16)
+                                    .background(ColorTheme.buttonGradient)
+                                    .cornerRadius(15)
+                                    .shadow(color: ColorTheme.primaryPink.opacity(0.3), radius: 5, x: 0, y: 3)
+                            }
+                        }
+                    }
+                }
+                .padding(.top, 5)
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
         }
-        .padding(.vertical, 5)
+        .padding()
+        .background(Color.white.opacity(0.8))
+        .cornerRadius(15)
+        .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 3)
     }
 }
 
-struct ResourceDetailView: View {
-    let resource: ResourceItem
+struct Resource {
+    let title: String
+    let description: String
+    let iconName: String
+    let source: String?
+    let url: String?
     
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                // Header
-                VStack(alignment: .leading, spacing: 10) {
-                    Text(resource.title)
-                        .font(.title)
-                        .fontWeight(.bold)
-                    
-                    HStack {
-                        Text(resource.source)
-                            .font(.subheadline)
-                            .foregroundColor(.blue)
-                        
-                        Text("•")
-                            .foregroundColor(.gray)
-                        
-                        Text(resource.category)
-                            .font(.subheadline)
-                            .foregroundColor(.gray)
-                    }
-                }
-                .padding(.horizontal)
-                
-                // Resource type label
-                HStack {
-                    Image(systemName: resource.type == "Articles" ? "doc.text" : resource.type == "Videos" ? "play.rectangle" : "person.3")
-                    Text(resource.type)
-                }
-                .font(.caption)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 5)
-                .background(Color.blue.opacity(0.1))
-                .foregroundColor(.blue)
-                .cornerRadius(5)
-                .padding(.horizontal)
-                
-                // If this is a video
-                if resource.type == "Videos" {
-                    // Video player placeholder
-                    ZStack {
-                        Rectangle()
-                            .fill(Color.gray.opacity(0.3))
-                            .aspectRatio(16/9, contentMode: .fit)
-                        
-                        VStack {
-                            Image(systemName: "play.circle.fill")
-                                .font(.system(size: 50))
-                                .foregroundColor(.white)
-                            
-                            Text("Video content would play here")
-                                .foregroundColor(.white)
-                                .padding(.top, 10)
-                        }
-                    }
-                    .cornerRadius(12)
-                    .padding(.horizontal)
-                }
-                
-                // Content
-                VStack(alignment: .leading, spacing: 15) {
-                    Text("Description")
-                        .font(.headline)
-                    
-                    Text(resource.description)
-                        .font(.body)
-                        .foregroundColor(.primary)
-                    
-                    Divider()
-                    
-                    Text("Content")
-                        .font(.headline)
-                    
-                    Text(resource.content)
-                        .font(.body)
-                        .foregroundColor(.primary)
-                }
-                .padding()
-                .background(Color(.systemGray6))
-                .cornerRadius(12)
-                .padding(.horizontal)
-                
-                // Singapore-specific note
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Singapore Resources")
-                        .font(.headline)
-                    
-                    Text("This resource is provided with information relevant to Singapore healthcare context. For more specific information, visit the source website or contact your healthcare provider.")
-                        .font(.caption)
-                        .foregroundColor(.gray)
-                }
-                .padding()
-                .background(Color.blue.opacity(0.1))
-                .cornerRadius(12)
-                .padding(.horizontal)
-            }
-            .padding(.vertical)
-        }
-        .navigationBarTitleDisplayMode(.inline)
+    var hasLink: Bool {
+        url != nil
     }
 }
+
+enum ResourceCategory: CaseIterable {
+    case ppd
+    case support
+    case selfCare
+    case localInfo
+    
+    var title: String {
+        switch self {
+        case .ppd:
+            return "About PPD"
+        case .support:
+            return "Support"
+        case .selfCare:
+            return "Self-Care"
+        case .localInfo:
+            return "Singapore"
+        }
+    }
+}
+
+// Sample Resources
+let ppdResources = [
+    Resource(
+        title: "What is Postpartum Depression?",
+        description: "Postpartum depression (PPD) is a complex mix of physical, emotional, and behavioral changes that occur after giving birth. It's a form of depression that affects approximately 1 in 7 women following childbirth. PPD is different from the 'baby blues,' which typically resolve within two weeks.",
+        iconName: "doc.text",
+        source: "KK Women's and Children's Hospital",
+        url: "https://www.kkh.com.sg"
+    ),
+    Resource(
+        title: "Signs and Symptoms",
+        description: "Symptoms of PPD may include persistent sadness, difficulty bonding with the baby, withdrawing from family and friends, loss of interest in activities, changes in appetite or sleep, overwhelming fatigue, reduced interest in activities, intense irritability and anger, fear of not being a good mother, and thoughts of harming yourself or your baby.",
+        iconName: "list.bullet",
+        source: "Singapore Ministry of Health",
+        url: "https://www.moh.gov.sg"
+    ),
+    Resource(
+        title: "Risk Factors",
+        description: "Factors that may increase your risk of developing PPD include a history of depression, a difficult pregnancy or birth experience, having a baby with health problems, lack of support from family or friends, financial stress, and major recent life changes.",
+        iconName: "exclamationmark.triangle",
+        source: "National University Hospital Singapore",
+        url: "https://www.nuh.com.sg"
+    ),
+    Resource(
+        title: "Treatment Options",
+        description: "PPD can be treated with a combination of counseling (talk therapy), medication, and lifestyle changes. Many women with PPD show significant improvement with treatment. Early identification and intervention are important for better outcomes.",
+        iconName: "heart.text.square",
+        source: "Singapore Association for Mental Health",
+        url: "https://www.samhealth.org.sg"
+    )
+]
+
+let supportResources = [
+    Resource(
+        title: "National Care Hotline",
+        description: "The National CARE Hotline provides psychological first aid and emotional support to anyone facing mental health challenges. Available 24/7.",
+        iconName: "phone.fill",
+        source: "Ministry of Social and Family Development",
+        url: "tel:1800-202-6868"
+    ),
+    Resource(
+        title: "Singapore Association for Mental Health (SAMH)",
+        description: "SAMH provides mental health services including counseling and support groups for various mental health conditions including postpartum depression.",
+        iconName: "person.2.fill",
+        source: "SAMH",
+        url: "https://www.samhealth.org.sg"
+    ),
+    Resource(
+        title: "KK Women's and Children's Hospital Mental Wellness Service",
+        description: "KKH offers specialized mental health services for women experiencing perinatal mental health issues, including postpartum depression.",
+        iconName: "building.2.fill",
+        source: "KKH",
+        url: "https://www.kkh.com.sg"
+    ),
+    Resource(
+        title: "Parent Support Groups",
+        description: "Various community organizations in Singapore offer support groups specifically for new parents dealing with the challenges of parenthood.",
+        iconName: "person.3.fill",
+        source: "Baby Bonus Parenting Resources",
+        url: "https://www.babybonus.msf.gov.sg"
+    )
+]
+
+let selfCareResources = [
+    Resource(
+        title: "Mindfulness for New Mothers",
+        description: "Simple mindfulness exercises that can be practiced in just a few minutes a day to reduce stress and anxiety. These can be done even while caring for your baby.",
+        iconName: "brain.head.profile",
+        source: nil,
+        url: nil
+    ),
+    Resource(
+        title: "Sleep Strategies",
+        description: "Practical tips for improving sleep quality when caring for a newborn, including napping when the baby naps, asking for help with night feedings, and creating a restful environment.",
+        iconName: "bed.double.fill",
+        source: nil,
+        url: nil
+    ),
+    Resource(
+        title: "Nutrition for Postpartum Recovery",
+        description: "Food suggestions that can help with energy levels, mood regulation, and physical recovery after childbirth. Includes meal prep ideas that are quick and nutritious.",
+        iconName: "fork.knife",
+        source: "Health Promotion Board Singapore",
+        url: "https://www.healthhub.sg"
+    ),
+    Resource(
+        title: "Gentle Exercise for New Mothers",
+        description: "Safe, gentle exercises that can be started after getting medical clearance, to help improve mood, energy levels, and physical recovery.",
+        iconName: "figure.walk",
+        source: nil,
+        url: nil
+    )
+]
+
+let localResources = [
+    Resource(
+        title: "KK Women's and Children's Hospital Postnatal Services",
+        description: "KKH provides comprehensive postnatal care services including home visits, breastfeeding support, and mental health screening for new mothers.",
+        iconName: "cross.fill",
+        source: "KKH",
+        url: "https://www.kkh.com.sg/patient-care/areas-of-care/womens-services"
+    ),
+    Resource(
+        title: "National University Hospital Women's Centre",
+        description: "NUH Women's Centre offers specialized care for women including postnatal care and mental health support for new mothers.",
+        iconName: "cross.fill",
+        source: "NUH",
+        url: "https://www.nuh.com.sg/our-services/Specialties/Obstetrics-Gynaecology/Pages/default.aspx"
+    ),
+    Resource(
+        title: "Community Health Assist Scheme (CHAS)",
+        description: "CHAS enables Singapore citizens to receive subsidies for medical and dental care at participating clinics near their homes, including mental health services.",
+        iconName: "dollarsign.square.fill",
+        source: "Ministry of Health",
+        url: "https://www.chas.sg"
+    ),
+    Resource(
+        title: "Baby Bonus Parenting Resources",
+        description: "The Baby Bonus Parenting Resources portal provides information and resources for parents in Singapore, including articles, videos, and listings of parent support groups.",
+        iconName: "figure.and.child.holdinghands",
+        source: "Ministry of Social and Family Development",
+        url: "https://www.babybonus.msf.gov.sg"
+    )
+]
 
 struct ResourcesView_Previews: PreviewProvider {
     static var previews: some View {
