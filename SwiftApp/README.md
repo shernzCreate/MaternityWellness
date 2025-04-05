@@ -24,7 +24,7 @@ The app is built as a native iOS application using SwiftUI and follows the MVVM 
 3. Enter "MaternityWellness" as the Product Name
 4. Set Organization Identifier (e.g., "com.example")
 5. Choose **SwiftUI** for the Interface and **Swift** for the language
-6. Set iOS Deployment Target to **iOS 16.0** (not iOS 18 beta)
+6. Set iOS Deployment Target to **iOS 17.0** (the latest stable release)
 7. Make sure "Use Core Data" is unchecked
 8. Select a location to save the project
 9. **Copy the files from this repository's** `SwiftApp/MaternityWellness/MaternityWellness` folder into your new Xcode project
@@ -83,9 +83,9 @@ MaternityWellness/
 
 ## Requirements
 
-- iOS 16.0+ (compatible with iPhone and iPad)
-- Xcode 14.0+
-- Swift 5.7+
+- iOS 17.0+ (compatible with iPhone and iPad)
+- Xcode 15.0+
+- Swift 5.9+
 
 ## Next Steps
 

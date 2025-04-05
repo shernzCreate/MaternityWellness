@@ -11,5 +11,13 @@ struct ContentView: View {
                 AuthView()
             }
         }
+        .onAppear {
+            // Check for iOS 17 features availability
+            if #available(iOS 17.0, *) {
+                print("Running on iOS 17 or later")
+            } else {
+                print("Running on iOS version earlier than 17")
+            }
+        }
     }
 }

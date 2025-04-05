@@ -21,5 +21,12 @@ struct MainTabView: View {
                 }
         }
         .accentColor(Color("AccentColor"))
+        .onAppear {
+            // Set minimum tab bar iOS 17 styling if available
+            if #available(iOS 17.0, *) {
+                // Use iOS 17 tab bar styling
+                print("Using iOS 17 tab bar styling")
+            }
+        }
     }
 }

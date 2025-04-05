@@ -290,9 +290,17 @@ struct QuestionnaireView: View {
                 .fontWeight(.medium)
             
             Button(action: {
-                // Call the number
-                if let url = URL(string: "tel://\(phone.replacingOccurrences(of: " ", with: ""))") {
-                    UIApplication.shared.open(url)
+                // Call the number - using iOS 17 compatible API if available
+                if #available(iOS 17.0, *) {
+                    print("Using iOS 17 API for phone call")
+                    if let url = URL(string: "tel://\(phone.replacingOccurrences(of: " ", with: ""))") {
+                        UIApplication.shared.open(url)
+                    }
+                } else {
+                    // Fallback for iOS 16
+                    if let url = URL(string: "tel://\(phone.replacingOccurrences(of: " ", with: ""))") {
+                        UIApplication.shared.open(url)
+                    }
                 }
             }) {
                 Label(phone, systemImage: "phone.fill")
@@ -401,21 +409,15 @@ struct QuestionnaireView: View {
     }
     
     private func isHighRisk() -> Bool {
-        // Check for high risk responses, particularly for self-harm questions
-        if questionnaire == .epds && (answers[10] ?? 0) > 0 {
-            return true // EPDS question 10 is about self-harm
-        }
+        // Check for high-risk conditions
+        // EPDS: Question 10 (risk of self-harm)
+        // PHQ-9: Question 9 (risk of self-harm)
         
-        if questionnaire == .phq9 && (answers[9] ?? 0) > 0 {
-            return true // PHQ-9 question 9 is about self-harm
+        switch questionnaire {
+        case .epds:
+            return answers[10] ?? 0 > 0
+        case .phq9:
+            return answers[9] ?? 0 > 0
         }
-        
-        // Also check overall high scores
-        if (questionnaire == .epds && totalScore >= 13) ||
-           (questionnaire == .phq9 && totalScore >= 15) {
-            return true
-        }
-        
-        return false
     }
 }

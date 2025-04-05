@@ -65,8 +65,7 @@ cat > $PROJECT_NAME/Info.plist << EOF
     <array>
         <string>UIInterfaceOrientationPortrait</string>
         <string>UIInterfaceOrientationPortraitUpsideDown</string>
-        <string>UIInterfaceOrientationLandscapeLeft" 
-        <string>UIInterfaceOrientationLandscapeRight</string>
+        <string>UIInterfaceOrientationLandscapeLeft</string>
         <string>UIInterfaceOrientationLandscapeRight</string>
     </array>
 </dict>
@@ -98,7 +97,7 @@ echo ""
 echo "NEXT STEPS:"
 echo "1. Open Xcode and create a new iOS App project"
 echo "2. Name it '$PROJECT_NAME'"
-echo "3. Choose SwiftUI for the interface and set iOS deployment target to iOS 17.0"
+echo "3. Choose SwiftUI for the interface"
 echo "4. Select the directory where you cloned this repository"
 echo "5. Once created, copy all Swift files from this repository to your project"
 echo "6. Make sure to create the following color assets in Assets.xcassets:"
