@@ -1,118 +1,96 @@
 import SwiftUI
 
 struct LoginView: View {
-    @EnvironmentObject private var authViewModel: AuthViewModel
-    @State private var username = ""
+    @EnvironmentObject var authViewModel: AuthViewModel
+    @State private var email = ""
     @State private var password = ""
-    @State private var showPassword = false
+    @State private var isPasswordVisible = false
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 15) {
-            // Username field
-            VStack(alignment: .leading) {
-                Text("Username")
-                    .font(.subheadline)
-                    .fontWeight(.medium)
+        VStack(spacing: 20) {
+            // Form fields
+            VStack(spacing: 15) {
+                // Email field
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Email")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                    
+                    TextField("Enter your email", text: $email)
+                        .keyboardType(.emailAddress)
+                        .autocapitalization(.none)
+                        .padding()
+                        .background(Color(.systemGray6))
+                        .cornerRadius(10)
+                }
                 
-                TextField("Enter your username", text: $username)
+                // Password field
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Password")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                    
+                    ZStack {
+                        if isPasswordVisible {
+                            TextField("Enter your password", text: $password)
+                                .autocapitalization(.none)
+                        } else {
+                            SecureField("Enter your password", text: $password)
+                                .autocapitalization(.none)
+                        }
+                        
+                        HStack {
+                            Spacer()
+                            Button(action: {
+                                isPasswordVisible.toggle()
+                            }) {
+                                Image(systemName: isPasswordVisible ? "eye.slash" : "eye")
+                                    .foregroundColor(.gray)
+                            }
+                            .padding(.trailing, 8)
+                        }
+                    }
                     .padding()
                     .background(Color(.systemGray6))
-                    .cornerRadius(8)
-                    .disableAutocorrection(true)
-                    .autocapitalization(.none)
+                    .cornerRadius(10)
+                }
+            }
+            .padding(.horizontal, 20)
+            
+            // Error message if any
+            if let error = authViewModel.loginError {
+                Text(error)
+                    .foregroundColor(.red)
+                    .font(.caption)
+                    .padding(.horizontal, 20)
             }
             
-            // Password field
-            VStack(alignment: .leading) {
-                Text("Password")
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-                
-                HStack {
-                    if showPassword {
-                        TextField("Enter your password", text: $password)
-                            .disableAutocorrection(true)
-                            .autocapitalization(.none)
-                    } else {
-                        SecureField("Enter your password", text: $password)
-                            .disableAutocorrection(true)
-                            .autocapitalization(.none)
-                    }
-                    
-                    Button(action: {
-                        showPassword.toggle()
-                    }) {
-                        Image(systemName: showPassword ? "eye.slash.fill" : "eye.fill")
-                            .foregroundColor(.gray)
-                    }
-                }
-                .padding()
-                .background(Color(.systemGray6))
-                .cornerRadius(8)
+            // Login button
+            Button(action: {
+                authViewModel.login(email: email, password: password)
+            }) {
+                Text("Login")
+                    .fontWeight(.semibold)
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color("AccentColor"))
+                    .cornerRadius(10)
             }
+            .padding(.horizontal, 20)
             
             // Forgot password link
             Button(action: {
                 // Handle forgot password
             }) {
                 Text("Forgot Password?")
-                    .font(.subheadline)
-                    .underline()
                     .foregroundColor(Color("AccentColor"))
+                    .font(.subheadline)
             }
             .padding(.top, 5)
             
-            // Error message
-            if let errorMessage = authViewModel.errorMessage {
-                Text(errorMessage)
-                    .foregroundColor(.red)
-                    .font(.footnote)
-                    .padding(.top, 5)
-            }
-            
-            // Login button
-            Button(action: {
-                if validateForm() {
-                    authViewModel.login(username: username, password: password)
-                }
-            }) {
-                HStack {
-                    Text("Login")
-                        .fontWeight(.bold)
-                    
-                    if authViewModel.isLoading {
-                        Spacer()
-                        ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                    }
-                }
-                .frame(maxWidth: .infinity)
-                .padding()
-                .background(formIsValid() ? Color("AccentColor") : Color.gray.opacity(0.5))
-                .foregroundColor(.white)
-                .cornerRadius(8)
-            }
-            .disabled(!formIsValid() || authViewModel.isLoading)
-            .padding(.top, 10)
+            Spacer()
         }
-        .padding()
-    }
-    
-    private func validateForm() -> Bool {
-        if username.isEmpty {
-            authViewModel.errorMessage = "Please enter your username"
-            return false
-        }
-        
-        if password.isEmpty {
-            authViewModel.errorMessage = "Please enter your password"
-            return false
-        }
-        
-        return true
-    }
-    
-    private func formIsValid() -> Bool {
-        return !username.isEmpty && !password.isEmpty
+        .padding(.top, 20)
     }
 }

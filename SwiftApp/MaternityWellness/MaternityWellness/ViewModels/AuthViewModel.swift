@@ -1,100 +1,63 @@
-import SwiftUI
+import Foundation
+import Combine
 
 class AuthViewModel: ObservableObject {
     @Published var currentUser: User?
-    @Published var isAuthenticated = false
-    @Published var isLoading = false
-    @Published var errorMessage: String?
+    @Published var isLoggedIn: Bool = false
+    @Published var loginError: String?
+    @Published var signupError: String?
     
-    // In a real app, you would implement proper authentication with your backend
-    // For demo purposes, we're using simple mock functionality
+    init() {
+        // In a real app, check for stored credentials or token here
+        // For demo purposes, just set to false initially
+        isLoggedIn = false
+    }
     
-    func login(username: String, password: String) {
-        isLoading = true
-        errorMessage = nil
+    func login(email: String, password: String) {
+        // Simulated authentication
+        // In a real app, this would call an authentication API
         
-        // Simulate network request
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            // For demo, accept any non-empty username/password
-            if !username.isEmpty && !password.isEmpty {
-                // Demo user
-                let user = User(
-                    id: 1,
-                    username: username,
-                    email: "\(username)@example.com",
-                    fullName: "Jane Smith",
-                    createdAt: Date()
-                )
-                
-                self.currentUser = user
-                self.isAuthenticated = true
-                UserDefaults.standard.set(true, forKey: "isAuthenticated")
-                // In a real app, would store a token
-            } else {
-                self.errorMessage = "Invalid username or password"
-            }
-            
-            self.isLoading = false
+        // For demo purposes, any non-empty credentials work
+        if !email.isEmpty && !password.isEmpty {
+            // Create a demo user
+            let user = User(email: email, name: email.components(separatedBy: "@").first ?? "User")
+            self.currentUser = user
+            self.isLoggedIn = true
+            self.loginError = nil
+        } else {
+            self.loginError = "Please enter your email and password"
         }
     }
     
-    func register(username: String, email: String, password: String, fullName: String) {
-        isLoading = true
-        errorMessage = nil
-        
-        // Validate input
-        if username.isEmpty || email.isEmpty || password.isEmpty || fullName.isEmpty {
-            errorMessage = "All fields are required"
-            isLoading = false
+    func signup(name: String, email: String, password: String, confirmPassword: String) {
+        // Validation
+        if name.isEmpty || email.isEmpty || password.isEmpty {
+            signupError = "All fields are required"
             return
         }
         
-        // Simulate network request
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            // Mock successful registration
-            let user = User(
-                id: 1,
-                username: username,
-                email: email,
-                fullName: fullName,
-                createdAt: Date()
-            )
-            
-            self.currentUser = user
-            self.isAuthenticated = true
-            UserDefaults.standard.set(true, forKey: "isAuthenticated")
-            self.isLoading = false
+        if password != confirmPassword {
+            signupError = "Passwords do not match"
+            return
         }
+        
+        // Email validation
+        if !email.contains("@") || !email.contains(".") {
+            signupError = "Please enter a valid email address"
+            return
+        }
+        
+        // In a real app, this would register the user with an API
+        // For demo purposes, create a user locally
+        let user = User(email: email, name: name)
+        self.currentUser = user
+        self.isLoggedIn = true
+        self.signupError = nil
     }
     
     func logout() {
-        isLoading = true
-        
-        // Simulate network request
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            self.currentUser = nil
-            self.isAuthenticated = false
-            UserDefaults.standard.set(false, forKey: "isAuthenticated")
-            self.isLoading = false
-        }
-    }
-    
-    func checkAuthStatus() {
-        // In a real app, you would validate a stored token with your backend
-        // For demo purposes, we're just checking a simple flag
-        let isAuthenticated = UserDefaults.standard.bool(forKey: "isAuthenticated")
-        
-        if isAuthenticated {
-            // Create a mock user
-            self.currentUser = User(
-                id: 1,
-                username: "demo_user",
-                email: "demo@example.com",
-                fullName: "Jane Smith",
-                createdAt: Date()
-            )
-            
-            self.isAuthenticated = true
-        }
+        // In a real app, clear tokens or session
+        self.currentUser = nil
+        self.isLoggedIn = false
     }
 }

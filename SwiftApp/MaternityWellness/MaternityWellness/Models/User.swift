@@ -1,17 +1,15 @@
 import Foundation
 
 struct User: Identifiable, Codable {
-    let id: Int
-    let username: String
-    let email: String
-    let fullName: String
-    let createdAt: Date
+    var id: String
+    var email: String
+    var name: String
+    var joinDate: Date
     
-    enum CodingKeys: String, CodingKey {
-        case id
-        case username
-        case email
-        case fullName = "full_name"
-        case createdAt = "created_at"
+    init(id: String = UUID().uuidString, email: String, name: String, joinDate: Date = Date()) {
+        self.id = id
+        self.email = email
+        self.name = name
+        self.joinDate = joinDate
     }
 }
